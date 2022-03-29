@@ -19,6 +19,7 @@
 
 <style>
 @import "assets/css/base.css";
+
 #app {
 	/* font-family: Avenir, Helvetica, Arial, sans-serif;
 	-webkit-font-smoothing: antialiased;
@@ -67,6 +68,15 @@
 	background-color: #29b6f6;
 	font-size: 18px;
 	font-weight: bold;
+}
+
+.mapboxgl-popup .mapboxgl-popup-content {
+	max-width: 400px;
+	font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+	font-size: 30px;
+	font-weight: bold;
+	color: #535353;
+	/* font: 20px/26px 'Helvetica Neue', Arial, Helvetica, sans-serif; */
 }
 
 #od_page {

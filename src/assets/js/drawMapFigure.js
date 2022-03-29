@@ -15,9 +15,12 @@ function initMap(container) {
     style: "mapbox://styles/xiaobie/cl06pkagg005i14p82d999k9w",
     center: [118.127193, 24.491097],
     zoom: 12.5,
+    dragRotate: false,
+    doubleClickZoom: false
   });
   const navigation_control = new mapboxgl.NavigationControl();
   map.addControl(navigation_control, "top-left");
+
 
   const scale = new mapboxgl.ScaleControl({
     maxWidth: 100,
@@ -133,50 +136,90 @@ function drawPoint(map, data, draw_type) {
       paint: {
         // 圆圈半径动态更改，根据缩放等级从9到16，将数据中的radius属性，线性映射[20, 50] -> [2,5] ->[20,50]
         "circle-radius": ["interpolate", ["linear"],
-          ["zoom"], 9, 0.5, 16, 5
+          ["zoom"],
+          9, 0.5,
+          16, 5
         ],
         "circle-color": [
-          "match",
-          ["get", "label"],
-          "-1",
-          "#E2DEDE",
-          // "0",
-          // "#e55e5e",
-          // "1",
-          // "#3EDBF0",
-          // "2",
-          // "#fbb03b",
-          // "3",
-          // "#0F7220",
-          // "4",
-          // "#B35EE5",
-          // "5",
-          // "#2BC516",
-          // "6",
-          // "#3F3697",
-          // "7",
-          // "#BA135D",
-          // "8",
-          // "#FF7A00",
-          // "9",
-          // "#2940D3",
-          point_color,
+          ["get", "label"]
         ],
-        "circle-opacity": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          14, 0,
-          15, 1
-        ]
-        // "circle-color": TYPE_POINT_COLOR[type_name]
+
       },
     });
   }
 }
 
+/**
+ * 绘制聚类社区网络
+ *@param {object} map 地图实例对象
+ *@param {object} net_data
+ */
+function drawClusterNet(map, net_data) {
+  const mapboxgl = require("mapbox-gl");
+  if (map.loaded()) {
+    console.log("is loaded");
+    ondraw();
+  } else {
+    map.on("load", function() {
+      console.log("not loaded");
+      ondraw();
+    })
+  }
+
+  function ondraw() {
+    console.log("draw111", net_data);
+    map.addSource("cluster_point", {
+      type: "geojson",
+      data: net_data,
+    });
+
+    map.addLayer({
+      id: "cluster_net",
+      source: "cluster_point",
+      type: "circle",
+      minzoom: 6,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"],
+          ["zoom"],
+          11, 8,
+          18, 55
+        ],
+        "circle-color": ["get", "color"],
+      },
+    });
+
+    let popup = new mapboxgl.Popup({
+      closeButton: false,
+      closeOnClick: false
+    });
+
+    map.on('mouseenter', "cluster_net", function(e) {
+      // Change the cursor style as a UI indicator.
+      map.getCanvas().style.cursor = 'pointer';
+      // console.log(e.features[0]);
+
+      let coordinates = e.features[0].geometry.coordinates.slice();
+      let street_name = e.features[0].properties.center_street;
 
 
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+
+      popup.setLngLat(coordinates)
+        .setText(street_name)
+        .addTo(map);
+    });
+
+    map.on('mouseleave', 'cluster_net', function() {
+      map.getCanvas().style.cursor = '';
+      popup.remove();
+    });
+
+
+
+  }
+}
 
 
 
@@ -186,24 +229,24 @@ function drawPoint(map, data, draw_type) {
  *@param {object} route_data 后端传来的路线数据
  */
 function drawRoute(map, route_data) {
-  map.on('load', function() {
-    map.addLayer({
-      id: "route",
-      type: "line",
-      source: {
-        type: "geojson",
-        data: route_data,
-      },
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
-      paint: {
-        "line-color": "#888",
-        "line-width": 8,
-      },
-    });
-  })
+  // map.on('load', function() {
+  map.addLayer({
+    id: "route",
+    type: "line",
+    source: {
+      type: "geojson",
+      data: route_data,
+    },
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+    },
+    paint: {
+      "line-color": "#888",
+      "line-width": 8,
+    },
+  });
+  // })
 }
 
 /**
@@ -218,9 +261,47 @@ function removeLayerByID(map, layer_id) {
 }
 
 
+function drawTestLink(map) {
+  map.addLayer({
+    id: "testlink",
+    type: "line",
+    source: {
+      "type": "geojson",
+      "data": {
+        "type": "Feature",
+        "properties": {},
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [118.088195, 24.499088],
+            [118.136676, 24.48238],
+          ]
+        }
+      }
+    },
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+    },
+    paint: {
+      "line-color": "#888",
+      "line-width": 8,
+      "line-opacity": 0.5
+    },
+
+  });
+
+
+
+}
+
+
+
 export {
   initMap,
   drawPoint,
   drawRoute,
-  removeLayerByID
+  removeLayerByID,
+  drawClusterNet,
+  drawTestLink
 }

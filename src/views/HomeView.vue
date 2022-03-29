@@ -1,33 +1,35 @@
 <template>
-	<div id="od_panel">
-		<div
-			@click="switchDrawType('get_on')"
-			id="geton_bt"
-			class="btn"
-			:class="{ active: show_status == 'get_on' }"
-		>
-			geton
+	<div id="map_view">
+		<div id="od_panel">
+			<div
+				@click="switchDrawType('get_on')"
+				id="geton_bt"
+				class="btn"
+				:class="{ active: show_status == 'get_on' }"
+			>
+				geton
+			</div>
+			<div
+				@click="switchDrawType('get_off')"
+				id="getoff_bt"
+				class="btn"
+				:class="{ active: show_status == 'get_off' }"
+			>
+				getoff
+			</div>
+			<div
+				@click="switchDrawType('hidden')"
+				id="hidden_bt"
+				class="btn"
+				:class="{ active: show_status == 'hidden' }"
+			>
+				hidden
+			</div>
 		</div>
-		<div
-			@click="switchDrawType('get_off')"
-			id="getoff_bt"
-			class="btn"
-			:class="{ active: show_status == 'get_off' }"
-		>
-			getoff
+		<div id="test_btn">
+			<button @click="drawRoute">draw</button>
+			<button @click="redraw">redraw</button>
 		</div>
-		<div
-			@click="switchDrawType('hidden')"
-			id="hidden_bt"
-			class="btn"
-			:class="{ active: show_status == 'hidden' }"
-		>
-			hidden
-		</div>
-	</div>
-	<div id="test_btn">
-		<button @click="drawRoute">draw</button>
-		<button @click="redraw">redraw</button>
 	</div>
 </template>
 
@@ -45,17 +47,22 @@ export default {
 	data() {
 		return {
 			map: null,
+			//追踪页面的上下车显示状态
 			show_status: "hidden",
 			get_on_data: null,
 			get_off_data: null,
+			cluster_net: null,
 		};
 	},
 	created() {
 		this.$store.dispatch("getRouteData");
 	},
 	mounted() {
-		this.map = mapdrawer.initMap("main_view");
+		this.map = mapdrawer.initMap("map_view");
 		this.listenPage();
+		this.requestData("cluster_net").then((res) => {
+			mapdrawer.drawClusterNet(this.map, res);
+		});
 	},
 	beforeRouteLeave(to, from, next) {
 		this.map.remove();
@@ -63,12 +70,13 @@ export default {
 	},
 	methods: {
 		drawRoute() {
-			mapdrawer.drawRoute(this.map, this.$store.state.route_data);
+			// mapdrawer.drawRoute(this.map, this.$store.state.route_data);
+			mapdrawer.drawTestLink(this.map);
 			// this.map.remove();
 			// console.log(this.map);
 		},
 		redraw() {
-			// this.map = mapdrawer.initMap("main_view");
+			// this.map = mapdrawer.initMap("map_view");
 		},
 
 		/**
@@ -78,7 +86,7 @@ export default {
 		switchDrawType(draw_type) {
 			if (this.show_status == draw_type) return;
 			this.map.remove();
-			this.map = mapdrawer.initMap("main_view");
+			this.map = mapdrawer.initMap("map_view");
 			if (draw_type == "hidden") {
 				this.show_status = "hidden";
 			} else {
@@ -92,7 +100,7 @@ export default {
 
 		/**
 		 * 数据请求
-		 *@param {string} data_type "get_on"|| "get_off"
+		 *@param {string} data_type "get_on"|| "get_off" || "cluster_net"
 		 *@return {promise}
 		 */
 		requestData(data_type) {
@@ -104,6 +112,9 @@ export default {
 			} else if (data_type == "get_off") {
 				datas = this.get_off_data;
 				urls = "/get_off_data";
+			} else if (data_type == "cluster_net") {
+				datas = this.cluster_net;
+				urls = "/get_cluster_network";
 			}
 			if (datas == null) {
 				return request({ url: urls });
@@ -129,7 +140,17 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import "assets/css/mapboxgl.css";
+@import "assets/css/mapboxgl2.css";
+
+#map_view {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	z-index: 0;
+}
+
 #test_btn {
 	position: absolute;
 	top: 5%;
