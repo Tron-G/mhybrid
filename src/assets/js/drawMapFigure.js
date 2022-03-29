@@ -155,22 +155,26 @@ function drawPoint(map, data, draw_type) {
  *@param {object} net_data
  */
 function drawClusterNet(map, net_data) {
+  console.log("1123", net_data);
   const mapboxgl = require("mapbox-gl");
   if (map.loaded()) {
     console.log("is loaded");
-    ondraw();
+    drawLink();
+    drawNode();
   } else {
     map.on("load", function() {
       console.log("not loaded");
-      ondraw();
+      drawLink();
+      drawNode();
     })
   }
 
-  function ondraw() {
-    console.log("draw111", net_data);
+  //画节点
+  function drawNode() {
+    // console.log("draw111", net_data);
     map.addSource("cluster_point", {
       type: "geojson",
-      data: net_data,
+      data: net_data.node,
     });
 
     map.addLayer({
@@ -197,15 +201,11 @@ function drawClusterNet(map, net_data) {
       // Change the cursor style as a UI indicator.
       map.getCanvas().style.cursor = 'pointer';
       // console.log(e.features[0]);
-
       let coordinates = e.features[0].geometry.coordinates.slice();
       let street_name = e.features[0].properties.center_street;
-
-
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
       }
-
       popup.setLngLat(coordinates)
         .setText(street_name)
         .addTo(map);
@@ -215,9 +215,28 @@ function drawClusterNet(map, net_data) {
       map.getCanvas().style.cursor = '';
       popup.remove();
     });
+  }
 
-
-
+  //画边
+  function drawLink() {
+    map.addSource("cluster_link_data", {
+      type: "geojson",
+      data: net_data.link,
+    });
+    map.addLayer({
+      id: "cluster_link",
+      type: "line",
+      source: "cluster_link_data",
+      layout: {
+        "line-join": "round",
+        "line-cap": "round",
+      },
+      paint: {
+        "line-color": "#888",
+        "line-width": ["get", "link_width"],
+        "line-opacity": 0.5
+      },
+    });
   }
 }
 

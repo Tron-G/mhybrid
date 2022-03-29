@@ -62,6 +62,7 @@ export default {
 		this.listenPage();
 		this.requestData("cluster_net").then((res) => {
 			mapdrawer.drawClusterNet(this.map, res);
+			this.cluster_net = res;
 		});
 	},
 	beforeRouteLeave(to, from, next) {
