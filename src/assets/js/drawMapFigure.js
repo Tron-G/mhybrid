@@ -199,6 +199,7 @@ function drawClusterNet(map, net_data) {
       closeOnClick: false
     });
 
+    //鼠标悬浮显示节点名称
     map.on('mouseenter', "cluster_node", function(e) {
       // Change the cursor style as a UI indicator.
       map.getCanvas().style.cursor = 'pointer';
@@ -219,16 +220,40 @@ function drawClusterNet(map, net_data) {
     });
 
     map.on('click', 'cluster_node', function(e) {
+
       let coordinates = e.features[0].geometry.coordinates.slice();
       const original_color = e.features[0].properties.original_color;
       const now_color = e.features[0].properties.color;
-      e.features[0].properties.color = "#000";
+      const now_id = e.features[0].properties.cluster_center;
+      const highlight_color = "#362222";
+
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
       }
 
-      console.log(e.features[0]);
+      // console.log(e.features[0]);
+      // 获取图层上的源数据
+      // let setFeatures = map.getSource("cluster_point")._options.data
 
+      // console.log("before change ", setFeatures);
+      // 深拷贝
+      // let replace_data = JSON.parse(JSON.stringify(setFeatures));
+      for (let i = 0; i < net_data.node.features.length; i++) {
+        const item_id = net_data.node.features[i]["properties"]["cluster_center"];
+        if (item_id == now_id) {
+          if (now_color != original_color) {
+            // 恢复原本的颜色
+            net_data.node.features[i]["properties"]["color"] = net_data.node.features[i]["properties"]["original_color"]
+          } else {
+            // 点击变色
+            net_data.node.features[i]["properties"]["color"] = highlight_color
+          }
+
+        }
+      }
+      // 更新地图
+      map.getSource("cluster_point").setData(net_data.node)
+      // console.log("after change ", map.getSource("cluster_point")._options.data);
     });
 
   }
