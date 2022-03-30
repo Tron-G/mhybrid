@@ -140,10 +140,14 @@ function drawPoint(map, data, draw_type) {
           9, 0.5,
           16, 5
         ],
-        "circle-color": [
-          ["get", "label"]
+        "circle-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          14.2, 0,
+          17, 1
         ],
-
+        "circle-color": point_color
       },
     });
   }
@@ -155,15 +159,13 @@ function drawPoint(map, data, draw_type) {
  *@param {object} net_data
  */
 function drawClusterNet(map, net_data) {
-  console.log("1123", net_data);
+
   const mapboxgl = require("mapbox-gl");
   if (map.loaded()) {
-    console.log("is loaded");
     drawLink();
     drawNode();
   } else {
     map.on("load", function() {
-      console.log("not loaded");
       drawLink();
       drawNode();
     })
@@ -178,7 +180,7 @@ function drawClusterNet(map, net_data) {
     });
 
     map.addLayer({
-      id: "cluster_net",
+      id: "cluster_node",
       source: "cluster_point",
       type: "circle",
       minzoom: 6,
@@ -197,7 +199,7 @@ function drawClusterNet(map, net_data) {
       closeOnClick: false
     });
 
-    map.on('mouseenter', "cluster_net", function(e) {
+    map.on('mouseenter', "cluster_node", function(e) {
       // Change the cursor style as a UI indicator.
       map.getCanvas().style.cursor = 'pointer';
       // console.log(e.features[0]);
@@ -211,10 +213,24 @@ function drawClusterNet(map, net_data) {
         .addTo(map);
     });
 
-    map.on('mouseleave', 'cluster_net', function() {
+    map.on('mouseleave', 'cluster_node', function() {
       map.getCanvas().style.cursor = '';
       popup.remove();
     });
+
+    map.on('click', 'cluster_node', function(e) {
+      let coordinates = e.features[0].geometry.coordinates.slice();
+      const original_color = e.features[0].properties.original_color;
+      const now_color = e.features[0].properties.color;
+      e.features[0].properties.color = "#000";
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+
+      console.log(e.features[0]);
+
+    });
+
   }
 
   //画边
@@ -309,7 +325,6 @@ function drawTestLink(map) {
     },
 
   });
-
 
 
 }

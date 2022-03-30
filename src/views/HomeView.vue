@@ -52,6 +52,7 @@ export default {
 			get_on_data: null,
 			get_off_data: null,
 			cluster_net: null,
+			temp: null,
 		};
 	},
 	created() {
@@ -62,7 +63,8 @@ export default {
 		this.listenPage();
 		this.requestData("cluster_net").then((res) => {
 			mapdrawer.drawClusterNet(this.map, res);
-			this.cluster_net = res;
+			// this.cluster_net = res;
+			this.cachedData("cluster_net", res);
 		});
 	},
 	beforeRouteLeave(to, from, next) {
@@ -72,7 +74,7 @@ export default {
 	methods: {
 		drawRoute() {
 			// mapdrawer.drawRoute(this.map, this.$store.state.route_data);
-			mapdrawer.drawTestLink(this.map);
+			// mapdrawer.drawTestLink(this.map);
 			// this.map.remove();
 			// console.log(this.map);
 		},
@@ -82,19 +84,23 @@ export default {
 
 		/**
 		 * g根据点击按钮切换绘图类型，上车，下车，不显示
-		 *@param {string} data_type "get_on"|| "get_off"|| "hidden"
+		 *@param {string} draw_type "get_on"|| "get_off"|| "hidden"
 		 */
 		switchDrawType(draw_type) {
 			if (this.show_status == draw_type) return;
-			this.map.remove();
-			this.map = mapdrawer.initMap("map_view");
+			if (this.show_status != "hidden") {
+				this.map.remove();
+				this.map = mapdrawer.initMap("map_view");
+				mapdrawer.drawClusterNet(this.map, this.cluster_net);
+			}
 			if (draw_type == "hidden") {
 				this.show_status = "hidden";
 			} else {
 				this.show_status = draw_type;
 				this.requestData(draw_type).then((res) => {
-					console.log(draw_type + " data", res);
+					// console.log(draw_type + " data", res);
 					mapdrawer.drawPoint(this.map, res, draw_type);
+					this.cachedData(draw_type, res);
 				});
 			}
 		},
@@ -123,6 +129,27 @@ export default {
 				return new Promise((resolve, reject) => {
 					resolve(datas);
 				});
+			}
+		},
+
+		/**
+		 * 缓存数据
+		 *@param {string} data_type
+		 @param {object} requested_data 后台返回的数据
+		 */
+		cachedData(data_type, requested_data) {
+			switch (data_type) {
+				case "get_on":
+					if (!this.get_on_data) this.get_on_data = requested_data;
+					break;
+				case "get_off":
+					if (!this.get_off_data) this.get_off_data = requested_data;
+					break;
+				case "cluster_net":
+					if (!this.cluster_net) this.cluster_net = requested_data;
+					break;
+				default:
+					break;
 			}
 		},
 		//监听页面刷新
