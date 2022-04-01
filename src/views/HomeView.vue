@@ -1,6 +1,6 @@
 <template>
 	<div id="map_view">
-		<div id="od_panel">
+		<div id="od_panel" class="panel">
 			<div
 				@click="switchDrawType('get_on')"
 				id="geton_bt"
@@ -26,6 +26,24 @@
 				hidden
 			</div>
 		</div>
+		<div id="overview_panel" class="panel">
+			<div
+				@click="switchOverview('overview')"
+				id="overview_bt"
+				class="btn enlarge"
+				:class="{ active: is_overview == true }"
+			>
+				overview
+			</div>
+			<div
+				@click="switchOverview('detail')"
+				id="detail_bt"
+				class="btn enlarge"
+				:class="{ active: is_overview == false }"
+			>
+				detail
+			</div>
+		</div>
 		<div id="test_btn">
 			<button @click="drawRoute">draw</button>
 			<button @click="redraw">redraw</button>
@@ -49,10 +67,16 @@ export default {
 			map: null,
 			//追踪页面的上下车显示状态
 			show_status: "hidden",
+			// 页面的缩放状态
+			is_overview: true,
 			get_on_data: null,
 			get_off_data: null,
+			// 社区网络原始数据
+			cluster_net_origin: null,
+			// 社区网络数据拷贝，用于保存颜色状态
 			cluster_net: null,
-			temp: null,
+			// 保存社区详情视图的地图中心等配置
+			detail_map_opt: null,
 		};
 	},
 	created() {
@@ -63,7 +87,6 @@ export default {
 		this.listenPage();
 		this.requestData("cluster_net").then((res) => {
 			mapdrawer.drawClusterNet(this.map, res);
-			// this.cluster_net = res;
 			this.cachedData("cluster_net", res);
 		});
 	},
@@ -88,10 +111,13 @@ export default {
 		 */
 		switchDrawType(draw_type) {
 			if (this.show_status == draw_type) return;
-			if (this.show_status != "hidden") {
-				this.map.remove();
-				this.map = mapdrawer.initMap("map_view");
+			// 概览视图下切换上下车热点
+			if (this.show_status != "hidden" && this.is_overview) {
+				this.resetMap();
 				mapdrawer.drawClusterNet(this.map, this.cluster_net);
+			} else if (this.show_status != "hidden" && !this.is_overview) {
+				// 详细视图下切换上下车热点
+				this.resetMap();
 			}
 			if (draw_type == "hidden") {
 				this.show_status = "hidden";
@@ -101,6 +127,61 @@ export default {
 					// console.log(draw_type + " data", res);
 					mapdrawer.drawPoint(this.map, res, draw_type);
 					this.cachedData(draw_type, res);
+				});
+			}
+		},
+		/**
+		 * 切换概览和详情视图
+		 *@param {string} show_type "overview"|| "detail"
+		 */
+		switchOverview(show_type) {
+			if (
+				(this.is_overview && show_type == "overview") ||
+				(!this.is_overview && show_type == "detail")
+			)
+				return;
+			if (show_type == "overview") {
+				this.is_overview = true;
+				this.show_status = "hidden";
+				this.resetMap();
+				mapdrawer.drawClusterNet(this.map, this.cluster_net);
+			} else {
+				// 跳转到社区详细视图
+				this.is_overview = false;
+				mapdrawer.removeLayerByType(this.map, "cluster_net");
+
+				//此处应该动态计算中心坐标
+				if (!this.detail_map_opt)
+					this.detail_map_opt = {
+						center: [118.107573, 24.483172],
+						zoom: 14.2,
+						speed: 2.5,
+						curve: 1,
+						easing(t) {
+							return t;
+						},
+					};
+				this.map.flyTo(this.detail_map_opt);
+			}
+		},
+		/**
+		 * 重置社区网络数据
+		 */
+		resetClusterData() {
+			this.cluster_net = JSON.parse(JSON.stringify(this.cluster_net_origin));
+		},
+		/**
+		 * 重置地图
+		 */
+		resetMap() {
+			this.map.remove();
+			this.resetClusterData();
+			if (this.is_overview) {
+				this.map = mapdrawer.initMap("map_view");
+			} else {
+				this.map = mapdrawer.initMap("map_view", {
+					center: this.detail_map_opt.center,
+					zoom: this.detail_map_opt.zoom,
 				});
 			}
 		},
@@ -146,7 +227,12 @@ export default {
 					if (!this.get_off_data) this.get_off_data = requested_data;
 					break;
 				case "cluster_net":
-					if (!this.cluster_net) this.cluster_net = requested_data;
+					if (!this.cluster_net) {
+						this.cluster_net_origin = JSON.parse(
+							JSON.stringify(requested_data)
+						);
+						this.cluster_net = JSON.parse(JSON.stringify(requested_data));
+					}
 					break;
 				default:
 					break;
@@ -195,26 +281,49 @@ export default {
 	left: 45%;
 	width: 280px;
 	height: 50px;
+}
+#overview_panel {
+	position: absolute;
+	top: 1%;
+	right: 10%;
+	width: 190px;
+	height: 50px;
+}
+
+.panel {
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
 	background-color: rgba(193, 193, 193, 0.3);
 	box-shadow: 0 0 10px #888888;
 	z-index: 9;
 }
 
-#geton_bt {
-	position: absolute;
-	top: 10px;
-	left: 10px;
-}
-#getoff_bt {
-	position: absolute;
-	top: 10px;
-	left: 100px;
-}
-#hidden_bt {
-	position: absolute;
-	top: 10px;
-	left: 190px;
-}
+// #geton_bt {
+// 	position: absolute;
+// 	top: 10px;
+// 	left: 10px;
+// }
+// #getoff_bt {
+// 	position: absolute;
+// 	top: 10px;
+// 	left: 100px;
+// }
+// #hidden_bt {
+// 	position: absolute;
+// 	top: 10px;
+// 	left: 190px;
+// }
+// #overview_bt{
+// 	position: absolute;
+// 	top: 10px;
+// 	left: 200px;
+// }
+// #detail_bt{
+// 	position: absolute;
+// 	top: 10px;
+// 	left: 290px;
+// }
 
 .btn {
 	width: 80px;
@@ -228,6 +337,9 @@ export default {
 	font-size: 18px;
 	line-height: 30px;
 	background-color: rgb(76, 159, 238);
+}
+.enlarge {
+	background-color: rgb(255, 186, 57);
 }
 .active {
 	cursor: not-allowed;

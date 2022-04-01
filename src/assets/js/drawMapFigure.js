@@ -1,23 +1,25 @@
 /**
  * 初始化地图实例对象
  *@param {string} container 地图绑定的div，id
+ *@param {object} opt 可选地图初始化配置
  *@return {object}  地图实例对象
  */
-// export const mapboxgl = require("mapbox-gl");
-
-function initMap(container) {
+function initMap(container, opt) {
   const mapboxgl = require("mapbox-gl");
   mapboxgl.accessToken =
     "pk.eyJ1IjoieGlhb2JpZSIsImEiOiJja2pndjRhMzQ1d2JvMnltMDE2dnlkMGhrIn0.bCKzSCs5tHTIYk4xQ65doA";
 
-  let map = new mapboxgl.Map({
+  const map_option = {
     container: container,
     style: "mapbox://styles/xiaobie/cl06pkagg005i14p82d999k9w",
     center: [118.127193, 24.491097],
     zoom: 12.5,
     dragRotate: false,
     doubleClickZoom: false
-  });
+  }
+  Object.assign(map_option, opt);
+
+  let map = new mapboxgl.Map(map_option);
   const navigation_control = new mapboxgl.NavigationControl();
   map.addControl(navigation_control, "top-left");
 
@@ -199,6 +201,7 @@ function drawClusterNet(map, net_data) {
       closeOnClick: false
     });
 
+
     //鼠标悬浮显示节点名称
     map.on('mouseenter', "cluster_node", function(e) {
       // Change the cursor style as a UI indicator.
@@ -219,8 +222,9 @@ function drawClusterNet(map, net_data) {
       popup.remove();
     });
 
-    map.on('click', 'cluster_node', function(e) {
 
+
+    map.on('click', 'cluster_node', function(e) {
       let coordinates = e.features[0].geometry.coordinates.slice();
       const original_color = e.features[0].properties.original_color;
       const now_color = e.features[0].properties.color;
@@ -230,14 +234,6 @@ function drawClusterNet(map, net_data) {
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
       }
-
-      // console.log(e.features[0]);
-      // 获取图层上的源数据
-      // let setFeatures = map.getSource("cluster_point")._options.data
-
-      // console.log("before change ", setFeatures);
-      // 深拷贝
-      // let replace_data = JSON.parse(JSON.stringify(setFeatures));
       for (let i = 0; i < net_data.node.features.length; i++) {
         const item_id = net_data.node.features[i]["properties"]["cluster_center"];
         if (item_id == now_id) {
@@ -248,12 +244,10 @@ function drawClusterNet(map, net_data) {
             // 点击变色
             net_data.node.features[i]["properties"]["color"] = highlight_color
           }
-
         }
       }
       // 更新地图
       map.getSource("cluster_point").setData(net_data.node)
-      // console.log("after change ", map.getSource("cluster_point")._options.data);
     });
 
   }
@@ -279,6 +273,34 @@ function drawClusterNet(map, net_data) {
       },
     });
   }
+}
+
+
+/**
+ * 绘制网络图
+ *@param {object} map 地图实例对象
+ *@param {object} 
+ */
+function drawNetwork(map, net_data) {
+  if (map.loaded()) {
+    drawLink();
+    drawNode();
+  } else {
+    map.on("load", function() {
+      drawLink();
+      drawNode();
+    })
+  }
+
+  function drawNode() {
+
+  }
+
+  function drawLink() {
+
+  }
+
+
 }
 
 
@@ -310,14 +332,18 @@ function drawRoute(map, route_data) {
 }
 
 /**
- * 根据id移除地图上的图层和数据源
+ * 根据type移除地图上的图层和数据源
  *@param {object} map 地图实例对象
- *@param {string} layer_id 
+ *@param {string} layer_type 
  */
-function removeLayerByID(map, layer_id) {
-  map.removeLayer(layer_id);
-  map = map.removeSource(layer_id + "_point");
-  return map;
+function removeLayerByType(map, layer_type) {
+  // 移除社区网络
+  if (layer_type == "cluster_net") {
+    map.removeLayer("cluster_node");
+    map.removeLayer("cluster_link");
+    map.removeSource("cluster_point");
+    map.removeSource("cluster_link_data");
+  }
 }
 
 
@@ -350,8 +376,6 @@ function drawTestLink(map) {
     },
 
   });
-
-
 }
 
 
@@ -360,7 +384,8 @@ export {
   initMap,
   drawPoint,
   drawRoute,
-  removeLayerByID,
+  removeLayerByType,
   drawClusterNet,
-  drawTestLink
+  drawTestLink,
+  drawNetwork
 }
