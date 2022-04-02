@@ -176,14 +176,14 @@ function drawClusterNet(map, net_data) {
   //画节点
   function drawNode() {
     // console.log("draw111", net_data);
-    map.addSource("cluster_point", {
+    map.addSource("cluster_node_data", {
       type: "geojson",
       data: net_data.node,
     });
 
     map.addLayer({
       id: "cluster_node",
-      source: "cluster_point",
+      source: "cluster_node_data",
       type: "circle",
       minzoom: 6,
       paint: {
@@ -282,25 +282,58 @@ function drawClusterNet(map, net_data) {
  *@param {object} 
  */
 function drawNetwork(map, net_data) {
+
   if (map.loaded()) {
     drawLink();
     drawNode();
   } else {
-    map.on("load", function() {
+    map.on("load", () => {
       drawLink();
       drawNode();
     })
   }
 
   function drawNode() {
-
+    map.addSource("community_node_data", {
+      type: "geojson",
+      data: net_data.node,
+    });
+    map.addLayer({
+      id: "community_node",
+      source: "community_node_data",
+      type: "circle",
+      minzoom: 6,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"],
+          ["zoom"],
+          13, 3,
+          17, 10
+        ],
+        "circle-color": ["get", "color"],
+      },
+    });
   }
 
   function drawLink() {
-
+    map.addSource("community_link_data", {
+      type: "geojson",
+      data: net_data.link,
+    });
+    map.addLayer({
+      id: "community_link",
+      type: "line",
+      source: "community_link_data",
+      layout: {
+        "line-join": "round",
+        "line-cap": "round",
+      },
+      paint: {
+        "line-color": "#888",
+        "line-width": 1,
+        "line-opacity": 0.3
+      },
+    });
   }
-
-
 }
 
 
@@ -341,7 +374,7 @@ function removeLayerByType(map, layer_type) {
   if (layer_type == "cluster_net") {
     map.removeLayer("cluster_node");
     map.removeLayer("cluster_link");
-    map.removeSource("cluster_point");
+    map.removeSource("cluster_node_data");
     map.removeSource("cluster_link_data");
   }
 }

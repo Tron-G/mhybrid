@@ -71,12 +71,14 @@ export default {
 			is_overview: true,
 			get_on_data: null,
 			get_off_data: null,
-			// 社区网络原始数据
+			// 社区聚类网络原始数据
 			cluster_net_origin: null,
 			// 社区网络数据拷贝，用于保存颜色状态
 			cluster_net: null,
 			// 保存社区详情视图的地图中心等配置
 			detail_map_opt: null,
+			// 社区街道详细网络原始数据
+			detail_net: null,
 		};
 	},
 	created() {
@@ -89,6 +91,9 @@ export default {
 			mapdrawer.drawClusterNet(this.map, res);
 			this.cachedData("cluster_net", res);
 		});
+		this.requestData("detail_net").then((res) => {
+			this.cachedData("detail_net", res);
+		});
 	},
 	beforeRouteLeave(to, from, next) {
 		this.map.remove();
@@ -99,7 +104,7 @@ export default {
 			// mapdrawer.drawRoute(this.map, this.$store.state.route_data);
 			// mapdrawer.drawTestLink(this.map);
 			// this.map.remove();
-			// console.log(this.map);
+			console.log(this.map.loaded());
 		},
 		redraw() {
 			// this.map = mapdrawer.initMap("map_view");
@@ -118,13 +123,17 @@ export default {
 			} else if (this.show_status != "hidden" && !this.is_overview) {
 				// 详细视图下切换上下车热点
 				this.resetMap();
+				this.requestData("detail_net").then((res) => {
+					this.cachedData("detail_net", res);
+					mapdrawer.drawNetwork(this.map, res);
+				});
 			}
 			if (draw_type == "hidden") {
 				this.show_status = "hidden";
 			} else {
 				this.show_status = draw_type;
 				this.requestData(draw_type).then((res) => {
-					// console.log(draw_type + " data", res);
+					console.log(draw_type + " data", res);
 					mapdrawer.drawPoint(this.map, res, draw_type);
 					this.cachedData(draw_type, res);
 				});
@@ -151,6 +160,7 @@ export default {
 				mapdrawer.removeLayerByType(this.map, "cluster_net");
 
 				//此处应该动态计算中心坐标
+
 				if (!this.detail_map_opt)
 					this.detail_map_opt = {
 						center: [118.107573, 24.483172],
@@ -161,7 +171,15 @@ export default {
 							return t;
 						},
 					};
+
 				this.map.flyTo(this.detail_map_opt);
+				//踩坑，idle事件
+				this.map.on("idle", () => {
+					this.requestData("detail_net").then((res) => {
+						this.cachedData("detail_net", res);
+						mapdrawer.drawNetwork(this.map, res);
+					});
+				});
 			}
 		},
 		/**
@@ -188,7 +206,7 @@ export default {
 
 		/**
 		 * 数据请求
-		 *@param {string} data_type "get_on"|| "get_off" || "cluster_net"
+		 *@param {string} data_type "get_on"|| "get_off" || "cluster_net"||"detail_net"
 		 *@return {promise}
 		 */
 		requestData(data_type) {
@@ -203,6 +221,9 @@ export default {
 			} else if (data_type == "cluster_net") {
 				datas = this.cluster_net;
 				urls = "/get_cluster_network";
+			} else if (data_type == "detail_net") {
+				datas = this.detail_net;
+				urls = "/get_community_network";
 			}
 			if (datas == null) {
 				return request({ url: urls });
@@ -233,6 +254,9 @@ export default {
 						);
 						this.cluster_net = JSON.parse(JSON.stringify(requested_data));
 					}
+					break;
+				case "detail_net":
+					if (!this.detail_net) this.detail_net = requested_data;
 					break;
 				default:
 					break;
