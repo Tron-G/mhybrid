@@ -78,7 +78,14 @@
 	color: #535353;
 	/* font: 20px/26px 'Helvetica Neue', Arial, Helvetica, sans-serif; */
 }
+.mapboxgl-ctrl-minimap {
+	border: 1px solid black;
+	box-shadow: 0 0 10px #888888;
+}
 
+.mapboxgl-ctrl-logo {
+	display: none !important;
+}
 #od_page {
 	/* text-align: center;
 	border: none;

@@ -1,3 +1,7 @@
+import Minimap from "./mapboxgl-control-minimap"
+
+const mapboxgl = require("mapbox-gl");
+mapboxgl.Minimap = Minimap;
 /**
  * 初始化地图实例对象
  *@param {string} container 地图绑定的div，id
@@ -5,11 +9,11 @@
  *@return {object}  地图实例对象
  */
 function initMap(container, opt) {
-  const mapboxgl = require("mapbox-gl");
+
   mapboxgl.accessToken =
     "pk.eyJ1IjoieGlhb2JpZSIsImEiOiJja2pndjRhMzQ1d2JvMnltMDE2dnlkMGhrIn0.bCKzSCs5tHTIYk4xQ65doA";
 
-  const map_option = {
+  let map_option = {
     container: container,
     style: "mapbox://styles/xiaobie/cl06pkagg005i14p82d999k9w",
     center: [118.127193, 24.491097],
@@ -22,8 +26,6 @@ function initMap(container, opt) {
   let map = new mapboxgl.Map(map_option);
   const navigation_control = new mapboxgl.NavigationControl();
   map.addControl(navigation_control, "top-left");
-
-
   const scale = new mapboxgl.ScaleControl({
     maxWidth: 100,
     unit: "metric",
@@ -32,10 +34,31 @@ function initMap(container, opt) {
   //设置显示边界
   const bounds = [
     [117.882223, 24.366902],
-    [118.373857, 24.80727],
+    [118.373857, 24.60727],
   ];
   map.setMaxBounds(bounds);
-  return map
+  let min_map = initMapAndMinMap(map);
+  map.min_map = min_map._miniMap;
+  return map;
+}
+
+/**
+ * 初始化小地图
+ */
+function initMapAndMinMap(map) {
+  let m_map = new mapboxgl.Minimap({
+    center: [118.127193, 24.491097],
+    zoom: 10.6,
+    style: "mapbox://styles/xiaobie/cl06pkagg005i14p82d999k9w",
+    zoomLevels: [],
+  })
+  map.addControl(m_map, 'bottom-right');
+  return m_map;
+  // map.on("load", () => {
+  //   map.addControl(cont, 'bottom-right');
+  //   resolve(cont)
+  //   //console.log(min_map);
+  // });
 }
 
 /**
@@ -155,14 +178,14 @@ function drawPoint(map, data, draw_type) {
   }
 }
 
+
 /**
  * 绘制聚类社区网络
  *@param {object} map 地图实例对象
  *@param {object} net_data
+ *@param {boolean} is_minmap 区分小地图, true表示小地图
  */
-function drawClusterNet(map, net_data) {
-
-  const mapboxgl = require("mapbox-gl");
+function drawClusterNet(map, net_data, is_minmap = false) {
   if (map.loaded()) {
     drawLink();
     drawNode();
@@ -176,14 +199,21 @@ function drawClusterNet(map, net_data) {
   //画节点
   function drawNode() {
     // console.log("draw111", net_data);
-    map.addSource("cluster_node_data", {
+    let layer_id = "cluster_node",
+      source_id = "cluster_node_data";
+    if (is_minmap) {
+      layer_id = "cluster_node_minmap"
+      source_id = "cluster_node_data_minmap"
+    }
+
+    map.addSource(source_id, {
       type: "geojson",
       data: net_data.node,
     });
 
     map.addLayer({
-      id: "cluster_node",
-      source: "cluster_node_data",
+      id: layer_id,
+      source: source_id,
       type: "circle",
       minzoom: 6,
       paint: {
@@ -196,79 +226,87 @@ function drawClusterNet(map, net_data) {
       },
     });
 
-    let popup = new mapboxgl.Popup({
-      closeButton: false,
-      closeOnClick: false
-    });
+    if (!is_minmap) {
+      let popup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false
+      });
 
+      //鼠标悬浮显示节点名称
+      map.on('mouseenter', layer_id, function(e) {
+        // Change the cursor style as a UI indicator.
+        map.getCanvas().style.cursor = 'pointer';
+        // console.log(e.features[0]);
+        let coordinates = e.features[0].geometry.coordinates.slice();
+        let street_name = e.features[0].properties.center_street;
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+        popup.setLngLat(coordinates)
+          .setText(street_name)
+          .addTo(map);
+      });
+      map.on('mouseleave', layer_id, function() {
+        map.getCanvas().style.cursor = '';
+        popup.remove();
+      });
 
-    //鼠标悬浮显示节点名称
-    map.on('mouseenter', "cluster_node", function(e) {
-      // Change the cursor style as a UI indicator.
-      map.getCanvas().style.cursor = 'pointer';
-      // console.log(e.features[0]);
-      let coordinates = e.features[0].geometry.coordinates.slice();
-      let street_name = e.features[0].properties.center_street;
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-      }
-      popup.setLngLat(coordinates)
-        .setText(street_name)
-        .addTo(map);
-    });
+      map.on('click', layer_id, function(e) {
+        let coordinates = e.features[0].geometry.coordinates.slice();
+        const original_color = e.features[0].properties.original_color;
+        const now_color = e.features[0].properties.color;
+        const now_id = e.features[0].properties.cluster_center;
+        const highlight_color = "#362222";
 
-    map.on('mouseleave', 'cluster_node', function() {
-      map.getCanvas().style.cursor = '';
-      popup.remove();
-    });
-
-
-
-    map.on('click', 'cluster_node', function(e) {
-      let coordinates = e.features[0].geometry.coordinates.slice();
-      const original_color = e.features[0].properties.original_color;
-      const now_color = e.features[0].properties.color;
-      const now_id = e.features[0].properties.cluster_center;
-      const highlight_color = "#362222";
-
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-      }
-      for (let i = 0; i < net_data.node.features.length; i++) {
-        const item_id = net_data.node.features[i]["properties"]["cluster_center"];
-        if (item_id == now_id) {
-          if (now_color != original_color) {
-            // 恢复原本的颜色
-            net_data.node.features[i]["properties"]["color"] = net_data.node.features[i]["properties"]["original_color"]
-          } else {
-            // 点击变色
-            net_data.node.features[i]["properties"]["color"] = highlight_color
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+        for (let i = 0; i < net_data.node.features.length; i++) {
+          const item_id = net_data.node.features[i]["properties"]["cluster_center"];
+          if (item_id == now_id) {
+            if (now_color != original_color) {
+              // 恢复原本的颜色
+              net_data.node.features[i]["properties"]["color"] = net_data.node.features[i]["properties"]["original_color"]
+            } else {
+              // 点击变色
+              net_data.node.features[i]["properties"]["color"] = highlight_color
+            }
           }
         }
-      }
-      // 更新地图
-      map.getSource("cluster_point").setData(net_data.node)
-    });
+        // 更新地图
+        map.getSource(source_id).setData(net_data.node)
+      });
+    }
 
   }
 
   //画边
   function drawLink() {
-    map.addSource("cluster_link_data", {
+    let link_scale = 1,
+      layer_id = "cluster_link",
+      source_id = "cluster_link_data";
+    if (is_minmap) {
+      link_scale = 0.3
+      layer_id = "cluster_link_minmap"
+      source_id = "cluster_link_data_minmap"
+    }
+
+    map.addSource(source_id, {
       type: "geojson",
       data: net_data.link,
     });
+
     map.addLayer({
-      id: "cluster_link",
+      id: layer_id,
       type: "line",
-      source: "cluster_link_data",
+      source: source_id,
       layout: {
         "line-join": "round",
         "line-cap": "round",
       },
       paint: {
         "line-color": "#888",
-        "line-width": ["get", "link_width"],
+        "line-width": ["*", ["get", "link_width"], link_scale],
         "line-opacity": 0.5
       },
     });
@@ -277,7 +315,7 @@ function drawClusterNet(map, net_data) {
 
 
 /**
- * 绘制网络图
+ * 绘制详细网络图
  *@param {object} map 地图实例对象
  *@param {object} 
  */
@@ -306,8 +344,8 @@ function drawNetwork(map, net_data) {
       paint: {
         "circle-radius": ["interpolate", ["linear"],
           ["zoom"],
-          13, 3,
-          17, 10
+          13, 4,
+          17, 11
         ],
         "circle-color": ["get", "color"],
       },
@@ -335,7 +373,6 @@ function drawNetwork(map, net_data) {
     });
   }
 }
-
 
 
 /**
@@ -420,5 +457,5 @@ export {
   removeLayerByType,
   drawClusterNet,
   drawTestLink,
-  drawNetwork
+  drawNetwork,
 }

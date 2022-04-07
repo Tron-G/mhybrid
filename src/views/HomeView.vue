@@ -48,6 +48,17 @@
 			<button @click="drawRoute">draw</button>
 			<button @click="redraw">redraw</button>
 		</div>
+
+		<div id="search_panel">
+			<input type="text" id="origin_win" placeholder="Origin" name="origin" />
+			<input
+				type="text"
+				id="destination_win"
+				placeholder="Destination"
+				name="destination"
+			/>
+			<div id="search_btn">search</div>
+		</div>
 	</div>
 </template>
 
@@ -86,9 +97,12 @@ export default {
 	},
 	mounted() {
 		this.map = mapdrawer.initMap("map_view");
+
+		// console.log(this.min_map);
 		this.listenPage();
 		this.requestData("cluster_net").then((res) => {
 			mapdrawer.drawClusterNet(this.map, res);
+			mapdrawer.drawClusterNet(this.map.min_map, res, true);
 			this.cachedData("cluster_net", res);
 		});
 		this.requestData("detail_net").then((res) => {
@@ -117,12 +131,9 @@ export default {
 		switchDrawType(draw_type) {
 			if (this.show_status == draw_type) return;
 			// 概览视图下切换上下车热点
-			if (this.show_status != "hidden" && this.is_overview) {
-				this.resetMap();
-				mapdrawer.drawClusterNet(this.map, this.cluster_net);
-			} else if (this.show_status != "hidden" && !this.is_overview) {
+			this.resetMap();
+			if (this.show_status != "hidden" && !this.is_overview) {
 				// 详细视图下切换上下车热点
-				this.resetMap();
 				this.requestData("detail_net").then((res) => {
 					this.cachedData("detail_net", res);
 					mapdrawer.drawNetwork(this.map, res);
@@ -149,38 +160,42 @@ export default {
 				(!this.is_overview && show_type == "detail")
 			)
 				return;
+			// 跳转到概览视图
 			if (show_type == "overview") {
 				this.is_overview = true;
 				this.show_status = "hidden";
 				this.resetMap();
-				mapdrawer.drawClusterNet(this.map, this.cluster_net);
 			} else {
 				// 跳转到社区详细视图
 				this.is_overview = false;
 				mapdrawer.removeLayerByType(this.map, "cluster_net");
 
 				//此处应该动态计算中心坐标
-
 				if (!this.detail_map_opt)
 					this.detail_map_opt = {
-						center: [118.107573, 24.483172],
+						center: [118.097573, 24.473172],
 						zoom: 14.2,
 						speed: 2.5,
 						curve: 1,
 						easing(t) {
+							//t 为0-1的飞行进度，可用于监听及触发事件
 							return t;
 						},
 					};
-
 				this.map.flyTo(this.detail_map_opt);
-				//踩坑，idle事件
+				// 添加标志防止重复绘制
+				let is_draw = false;
 				this.map.on("idle", () => {
-					this.requestData("detail_net").then((res) => {
-						this.cachedData("detail_net", res);
-						mapdrawer.drawNetwork(this.map, res);
-					});
+					if (!is_draw) {
+						this.requestData("detail_net").then((res) => {
+							this.cachedData("detail_net", res);
+							mapdrawer.drawNetwork(this.map, res);
+						});
+						is_draw = true;
+					}
 				});
 			}
+			this.windowAnimal();
 		},
 		/**
 		 * 重置社区网络数据
@@ -189,18 +204,21 @@ export default {
 			this.cluster_net = JSON.parse(JSON.stringify(this.cluster_net_origin));
 		},
 		/**
-		 * 重置地图
+		 * 重置地图和小地图
 		 */
 		resetMap() {
 			this.map.remove();
 			this.resetClusterData();
 			if (this.is_overview) {
 				this.map = mapdrawer.initMap("map_view");
+				mapdrawer.drawClusterNet(this.map, this.cluster_net);
+				mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
 			} else {
 				this.map = mapdrawer.initMap("map_view", {
 					center: this.detail_map_opt.center,
 					zoom: this.detail_map_opt.zoom,
 				});
+				mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
 			}
 		},
 
@@ -273,6 +291,16 @@ export default {
 				// return "关闭提示";
 			};
 		},
+		windowAnimal() {
+			let search_panel = document.getElementById("search_panel");
+			if (this.is_overview) {
+				search_panel.classList.add("hide_window");
+				search_panel.classList.remove("show_window");
+			} else {
+				search_panel.classList.add("show_window");
+				search_panel.classList.remove("hide_window");
+			}
+		},
 		//////////////////////////////////////////////////
 	},
 };
@@ -281,93 +309,5 @@ export default {
 <style lang="scss" scoped>
 @import "assets/css/mapboxgl.css";
 @import "assets/css/mapboxgl2.css";
-
-#map_view {
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	z-index: 0;
-}
-
-#test_btn {
-	position: absolute;
-	top: 5%;
-	left: 5%;
-	width: 100px;
-	height: 100px;
-	background-color: rgb(243, 224, 232);
-	z-index: 9;
-}
-
-#od_panel {
-	position: absolute;
-	top: 1%;
-	left: 45%;
-	width: 280px;
-	height: 50px;
-}
-#overview_panel {
-	position: absolute;
-	top: 1%;
-	right: 10%;
-	width: 190px;
-	height: 50px;
-}
-
-.panel {
-	display: flex;
-	justify-content: space-around;
-	align-items: center;
-	background-color: rgba(193, 193, 193, 0.3);
-	box-shadow: 0 0 10px #888888;
-	z-index: 9;
-}
-
-// #geton_bt {
-// 	position: absolute;
-// 	top: 10px;
-// 	left: 10px;
-// }
-// #getoff_bt {
-// 	position: absolute;
-// 	top: 10px;
-// 	left: 100px;
-// }
-// #hidden_bt {
-// 	position: absolute;
-// 	top: 10px;
-// 	left: 190px;
-// }
-// #overview_bt{
-// 	position: absolute;
-// 	top: 10px;
-// 	left: 200px;
-// }
-// #detail_bt{
-// 	position: absolute;
-// 	top: 10px;
-// 	left: 290px;
-// }
-
-.btn {
-	width: 80px;
-	height: 30px;
-	cursor: pointer;
-	border-radius: 2px;
-	text-align: center;
-	color: white;
-	display: inline;
-	font-weight: bold;
-	font-size: 18px;
-	line-height: 30px;
-	background-color: rgb(76, 159, 238);
-}
-.enlarge {
-	background-color: rgb(255, 186, 57);
-}
-.active {
-	cursor: not-allowed;
-	/* pointer-events: none; */
-	background-color: gray;
-}
+@import "assets/css/homePage.css";
 </style>
