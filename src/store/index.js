@@ -10,6 +10,7 @@ export default createStore({
     get_on_data: null,
     get_off_data: null,
     route_data: null,
+    is_loading: false,
   },
   getters: {},
   mutations,

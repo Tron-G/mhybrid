@@ -11,12 +11,25 @@
 			</button>
 		</router-link> -->
 	</div>
-
+	<loader :title="msg"></loader>
 	<div id="main_view">
 		<router-view />
 	</div>
 </template>
 
+<script>
+import loader from "components/loader.vue";
+export default {
+	components: {
+		loader,
+	},
+	data() {
+		return {
+			msg: "Calculating...",
+		};
+	},
+};
+</script>
 <style>
 @import "assets/css/base.css";
 
@@ -76,6 +89,7 @@
 	font-size: 30px;
 	font-weight: bold;
 	color: #535353;
+	line-height: 35px;
 	/* font: 20px/26px 'Helvetica Neue', Arial, Helvetica, sans-serif; */
 }
 .mapboxgl-ctrl-minimap {

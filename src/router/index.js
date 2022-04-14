@@ -9,11 +9,11 @@ const routes = [{
     name: 'home',
     component: HomeView
   },
-  {
-    path: '/odView',
-    name: 'odview',
-    component: () => import( /* webpackChunkName: "about" */ '../views/ODView.vue')
-  },
+  // {
+  //   path: '/odView',
+  //   name: 'odview',
+  //   component: () => import( /* webpackChunkName: "about" */ '../views/ODView.vue')
+  // },
 ]
 
 const router = createRouter({

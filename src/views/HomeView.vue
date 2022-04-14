@@ -48,30 +48,21 @@
 			<button @click="drawRoute">draw</button>
 			<button @click="redraw">redraw</button>
 		</div>
-
-		<div id="search_panel">
-			<input type="text" id="origin_win" placeholder="Origin" name="origin" />
-			<input
-				type="text"
-				id="destination_win"
-				placeholder="Destination"
-				name="destination"
-			/>
-			<div id="search_btn">search</div>
-		</div>
+		<search ref="cp_search" @search-click="computeMultiRoute"></search>
 	</div>
 </template>
 
 <script>
 // @ is an alias to /src
-// import HelloWorld from "@/components/HelloWorld.vue";
 
-import * as mapdrawer from "../assets/js/drawMapFigure";
-import { request } from "../network/request.js";
+import * as mapdrawer from "assets/js/drawMapFigure";
+import { request, requestAnimation } from "../network/request.js";
+import search from "@/components/search";
+
 export default {
 	name: "HomeView",
 	components: {
-		// HelloWorld,
+		search,
 	},
 	data() {
 		return {
@@ -80,6 +71,7 @@ export default {
 			show_status: "hidden",
 			// 页面的缩放状态
 			is_overview: true,
+			//缓存od数据
 			get_on_data: null,
 			get_off_data: null,
 			// 社区聚类网络原始数据
@@ -97,14 +89,20 @@ export default {
 	},
 	mounted() {
 		this.map = mapdrawer.initMap("map_view");
-
-		// console.log(this.min_map);
 		this.listenPage();
-		this.requestData("cluster_net").then((res) => {
-			mapdrawer.drawClusterNet(this.map, res);
-			mapdrawer.drawClusterNet(this.map.min_map, res, true);
-			this.cachedData("cluster_net", res);
-		});
+		// 缓存聚类网络图数据
+		this.requestData("cluster_net")
+			.then((res) => {
+				// 确保地图绑定的数据是data缓存的数据而不是后台直接传来的
+				this.cachedData("cluster_net", res);
+				return this.cluster_net;
+			})
+			.then((res) => {
+				mapdrawer.drawClusterNet(this.map, res);
+				mapdrawer.drawClusterNet(this.map.min_map, res, true);
+			});
+
+		// 预先缓存街道网络数据
 		this.requestData("detail_net").then((res) => {
 			this.cachedData("detail_net", res);
 		});
@@ -131,7 +129,7 @@ export default {
 		switchDrawType(draw_type) {
 			if (this.show_status == draw_type) return;
 			// 概览视图下切换上下车热点
-			this.resetMap();
+			if (this.show_status != "hidden") this.resetMap();
 			if (this.show_status != "hidden" && !this.is_overview) {
 				// 详细视图下切换上下车热点
 				this.requestData("detail_net").then((res) => {
@@ -166,9 +164,10 @@ export default {
 				this.show_status = "hidden";
 				this.resetMap();
 			} else {
-				// 跳转到社区详细视图
+				// 跳转到社区详细视图,同时更新小地图上选中节点的颜色
 				this.is_overview = false;
 				mapdrawer.removeLayerByType(this.map, "cluster_net");
+				mapdrawer.updateMinMap(this.map, this.cluster_net);
 
 				//此处应该动态计算中心坐标
 				if (!this.detail_map_opt)
@@ -195,7 +194,7 @@ export default {
 					}
 				});
 			}
-			this.windowAnimal();
+			this.searchWindow();
 		},
 		/**
 		 * 重置社区网络数据
@@ -208,8 +207,8 @@ export default {
 		 */
 		resetMap() {
 			this.map.remove();
-			this.resetClusterData();
 			if (this.is_overview) {
+				this.resetClusterData();
 				this.map = mapdrawer.initMap("map_view");
 				mapdrawer.drawClusterNet(this.map, this.cluster_net);
 				mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
@@ -280,7 +279,9 @@ export default {
 					break;
 			}
 		},
-		//监听页面刷新
+		/**
+		 *监听页面刷新
+		 */
 		listenPage() {
 			window.onbeforeunload = function (e) {
 				this.map.remove();
@@ -291,16 +292,45 @@ export default {
 				// return "关闭提示";
 			};
 		},
-		windowAnimal() {
-			let search_panel = document.getElementById("search_panel");
-			if (this.is_overview) {
-				search_panel.classList.add("hide_window");
-				search_panel.classList.remove("show_window");
-			} else {
-				search_panel.classList.add("show_window");
-				search_panel.classList.remove("hide_window");
-			}
+
+		/**
+		 *搜索窗口
+		 */
+		searchWindow() {
+			if (this.is_overview) this.$refs.cp_search.hide();
+			else this.$refs.cp_search.show();
 		},
+
+		computeMultiRoute(od_info) {
+			console.log(od_info);
+
+			const origin_site = od_info["origin_site"],
+				destination_site = od_info["destination_site"];
+
+			let that = this;
+			requestAnimation({
+				url: "/calc_multi_route",
+				method: "post",
+				data: { origin_site, destination_site },
+			}).then((res) => {
+				mapdrawer.drawMultiRoute(that.map, res);
+			});
+			// mapdrawer.drawMultiRoute(that.map, that.detail_net, {});
+			// requestAnimation({
+			// 	url: "/calc_multi_route",
+			// 	method: "post",
+			// 	data: { origin_site, destination_site },
+			// 	loadStart() {
+			// 		that.$refs.cp_load.show();
+			// 	},
+			// 	loadEnd() {
+			// 		that.$refs.cp_load.close();
+			// 	},
+			// }).then((res) => {
+			// 	console.log("routes", res);
+			// });
+		},
+
 		//////////////////////////////////////////////////
 	},
 };

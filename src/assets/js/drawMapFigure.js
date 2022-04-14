@@ -2,6 +2,10 @@ import Minimap from "./mapboxgl-control-minimap"
 
 const mapboxgl = require("mapbox-gl");
 mapboxgl.Minimap = Minimap;
+
+const SHOW_ROUTE_NUM = 3;
+
+
 /**
  * 初始化地图实例对象
  *@param {string} container 地图绑定的div，id
@@ -13,6 +17,7 @@ function initMap(container, opt) {
   mapboxgl.accessToken =
     "pk.eyJ1IjoieGlhb2JpZSIsImEiOiJja2pndjRhMzQ1d2JvMnltMDE2dnlkMGhrIn0.bCKzSCs5tHTIYk4xQ65doA";
 
+  // 地图默认配置，会被opt里的配置覆盖
   let map_option = {
     container: container,
     style: "mapbox://styles/xiaobie/cl06pkagg005i14p82d999k9w",
@@ -22,7 +27,7 @@ function initMap(container, opt) {
     doubleClickZoom: false
   }
   Object.assign(map_option, opt);
-
+  // 注册地图组件
   let map = new mapboxgl.Map(map_option);
   const navigation_control = new mapboxgl.NavigationControl();
   map.addControl(navigation_control, "top-left");
@@ -37,6 +42,7 @@ function initMap(container, opt) {
     [118.373857, 24.60727],
   ];
   map.setMaxBounds(bounds);
+  // 绑定小地图
   let min_map = initMapAndMinMap(map);
   map.min_map = min_map._miniMap;
   return map;
@@ -96,7 +102,6 @@ function drawPoint(map, data, draw_type) {
       point_color = "#2940D3"
     }
 
-
     map.addLayer({
       "id": draw_type + "_heatmap",
       "type": "heatmap",
@@ -147,8 +152,8 @@ function drawPoint(map, data, draw_type) {
           "interpolate",
           ["linear"],
           ["zoom"],
-          10, 1,
-          14.5, 0
+          10.5, 1,
+          16, 0
         ],
       }
     });
@@ -198,7 +203,6 @@ function drawClusterNet(map, net_data, is_minmap = false) {
 
   //画节点
   function drawNode() {
-    // console.log("draw111", net_data);
     let layer_id = "cluster_node",
       source_id = "cluster_node_data";
     if (is_minmap) {
@@ -251,6 +255,7 @@ function drawClusterNet(map, net_data, is_minmap = false) {
         popup.remove();
       });
 
+      // 实现点击地图节点实时变色
       map.on('click', layer_id, function(e) {
         let coordinates = e.features[0].geometry.coordinates.slice();
         const original_color = e.features[0].properties.original_color;
@@ -273,7 +278,7 @@ function drawClusterNet(map, net_data, is_minmap = false) {
             }
           }
         }
-        // 更新地图
+        // 更新地图节点颜色数据
         map.getSource(source_id).setData(net_data.node)
       });
     }
@@ -282,6 +287,7 @@ function drawClusterNet(map, net_data, is_minmap = false) {
 
   //画边
   function drawLink() {
+    // 根据地图是否小地图进行边的缩放
     let link_scale = 1,
       layer_id = "cluster_link",
       source_id = "cluster_link_data";
@@ -320,63 +326,188 @@ function drawClusterNet(map, net_data, is_minmap = false) {
  *@param {object} 
  */
 function drawNetwork(map, net_data) {
-
-  if (map.loaded()) {
-    drawLink();
-    drawNode();
-  } else {
+  if (map.loaded())
+    ondraw();
+  else
     map.on("load", () => {
-      drawLink();
-      drawNode();
+      ondraw();
     })
-  }
 
-  function drawNode() {
-    map.addSource("community_node_data", {
-      type: "geojson",
-      data: net_data.node,
-    });
-    map.addLayer({
-      id: "community_node",
-      source: "community_node_data",
-      type: "circle",
-      minzoom: 6,
-      paint: {
-        "circle-radius": ["interpolate", ["linear"],
-          ["zoom"],
-          13, 4,
-          17, 11
-        ],
-        "circle-color": ["get", "color"],
-      },
-    });
+  function ondraw() {
+    drawLinkByType(map, net_data.link, "community_link_data", "community_link");
+    drawNodeByType(map, net_data.node, "community_node_data", "community_node");
   }
+}
 
-  function drawLink() {
-    map.addSource("community_link_data", {
-      type: "geojson",
-      data: net_data.link,
-    });
-    map.addLayer({
-      id: "community_link",
-      type: "line",
-      source: "community_link_data",
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
-      paint: {
-        "line-color": "#888",
-        "line-width": 1,
-        "line-opacity": 0.3
-      },
-    });
-  }
+/**
+ * 切换到街道视图后更新小地图上选中的节点颜色
+ *@param {object} map 地图实例对象
+ *@param {object} data 节点数据
+ */
+function updateMinMap(map, data) {
+  map.min_map.getSource("cluster_node_data_minmap").setData(data.node)
 }
 
 
 /**
- * 绘制地图上的路线
+ * 绘制多模式路线
+ *@param {object} map 地图实例对象
+ *@param {object} route_data 
+ */
+function drawMultiRoute(map, route_data) {
+  console.log(route_data);
+  //防止总路线数量小于SHOW_ROUTE_NUM
+  const route_num = Math.min(route_data.length, SHOW_ROUTE_NUM);
+
+  // 更新地图，隐藏边，更改节点透明度
+  removeLayerByType(map, "community_link");
+  map.setPaintProperty("community_node", "circle-opacity", 0.3)
+
+  // 尝试清除上次绘制的路线
+  removeLayerByType(map, "multi_route");
+
+  for (let i = 0; i < route_num; i++) {
+    let draw_type = "candidate"
+    if (i == 0) draw_type = "target"
+    drawLinkByType(map, route_data[i].link, "multi_route_link_data" + i, "multi_route_link" + i, draw_type)
+    drawNodeByType(map, route_data[i].node, "multi_route_node_data" + i, "multi_route_node" + i, draw_type)
+  }
+
+}
+
+/**
+ * 绘制普通网络节点
+ *@param {object} map 地图实例对象
+ *@param {object} data 
+ *@param {String} source_id 图层数据id
+ *@param {String} layer_id 图层id
+ *@param {String} node_type 节点样式，路线展示节点，候选路线节点，街道网络节点 "target"||"candidate"||"default"
+ */
+function drawNodeByType(map, data, source_id, layer_id, node_type = "default") {
+  let paint_opt = {}
+  if (node_type == "target") {
+    paint_opt = {
+      "circle-radius": ["interpolate", ["linear"],
+        ["zoom"],
+        13, 8,
+        17, 18
+      ],
+      "circle-color": ["get", "color"],
+    }
+  } else if (node_type == "candidate") {
+    paint_opt = {
+      "circle-radius": ["interpolate", ["linear"],
+        ["zoom"],
+        13, 4,
+        17, 11
+      ],
+      "circle-color": ["get", "color"],
+      "circle-opacity": 0.5,
+    }
+  } else {
+    paint_opt = {
+      "circle-radius": ["interpolate", ["linear"],
+        ["zoom"],
+        13, 4,
+        17, 11
+      ],
+      "circle-color": ["get", "color"],
+    }
+  }
+
+  map.addSource(source_id, {
+    type: "geojson",
+    data: data,
+  });
+  map.addLayer({
+    id: layer_id,
+    source: source_id,
+    type: "circle",
+    paint: paint_opt,
+  });
+
+  let popup = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false
+  });
+
+  //鼠标悬浮显示节点名称
+  map.on('mouseenter', layer_id, function(e) {
+    map.getCanvas().style.cursor = 'pointer';
+    let coordinates = e.features[0].geometry.coordinates.slice();
+    const street_name = e.features[0].properties.name;
+    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+    }
+    popup.setLngLat(coordinates)
+      .setText(street_name)
+      .addTo(map);
+  });
+  map.on('mouseleave', layer_id, function() {
+    map.getCanvas().style.cursor = '';
+    popup.remove();
+  });
+
+}
+
+/**
+ * 绘制普通网络边
+ *@param {object} map 地图实例对象
+ *@param {object} data 
+ *@param {String} source_id 图层数据id
+ *@param {String} layer_id 图层id
+ *@param {String} link_type 边样式，路线展示边，候选路线边，街道网络边 "target"||"candidate"||"default"
+ */
+function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
+
+  map.addSource(source_id, {
+    type: "geojson",
+    data: data,
+  });
+
+  let paint_opt = {}
+  if (link_type == "target") {
+    paint_opt = {
+      "line-color": [
+        'match',
+        ['get', 'transport_mode'],
+        "bike", "#F7FD04",
+        "car", "#185ADB",
+        "#6E7788",
+      ],
+      "line-width": 10,
+      "line-opacity": 1
+    }
+
+  } else if (link_type == "candidate") {
+    paint_opt = {
+      "line-color": "#888",
+      "line-width": 5,
+      "line-opacity": 0.3
+    }
+  } else {
+    paint_opt = {
+      "line-color": "#888",
+      "line-width": 1,
+      "line-opacity": 0.3
+    }
+  }
+  map.addLayer({
+    id: layer_id,
+    type: "line",
+    source: source_id,
+    layout: {
+      "line-join": "round",
+      "line-cap": "round",
+    },
+    paint: paint_opt,
+  });
+}
+
+
+
+/**
+ * 绘制地图上的路线-测试
  *@param {object} map 地图实例对象
  *@param {object} route_data 后端传来的路线数据
  */
@@ -413,6 +544,25 @@ function removeLayerByType(map, layer_type) {
     map.removeLayer("cluster_link");
     map.removeSource("cluster_node_data");
     map.removeSource("cluster_link_data");
+  }
+  if (layer_type == "community_link") {
+    if (map.getLayer("community_link") != undefined) {
+      map.removeLayer("community_link");
+      map.removeSource("community_link_data");
+    }
+  }
+  // 移除推荐路线
+  if (layer_type == "multi_route") {
+    for (let i = 0; i < SHOW_ROUTE_NUM; i++) {
+      if (map.getLayer("multi_route_link" + i) != undefined) {
+        map.removeLayer("multi_route_link" + i);
+        map.removeSource("multi_route_link_data" + i);
+      }
+      if (map.getLayer("multi_route_node" + i) != undefined) {
+        map.removeLayer("multi_route_node" + i);
+        map.removeSource("multi_route_node_data" + i);
+      }
+    }
   }
 }
 
@@ -458,4 +608,6 @@ export {
   drawClusterNet,
   drawTestLink,
   drawNetwork,
+  updateMinMap,
+  drawMultiRoute
 }
