@@ -28,13 +28,20 @@ export default {
 		},
 		show() {
 			let search_panel = document.getElementById("search_panel");
-			search_panel.classList.add("show_window");
-			search_panel.classList.remove("hide_window");
+			if (
+				search_panel.classList.contains("hide_window") ||
+				search_panel.classList.length == 0
+			) {
+				search_panel.classList.add("show_window");
+				search_panel.classList.remove("hide_window");
+			}
 		},
 		hide() {
 			let search_panel = document.getElementById("search_panel");
-			search_panel.classList.add("hide_window");
-			search_panel.classList.remove("show_window");
+			if (search_panel.classList.contains("show_window")) {
+				search_panel.classList.add("hide_window");
+				search_panel.classList.remove("show_window");
+			}
 		},
 	},
 };
@@ -76,6 +83,8 @@ export default {
 	background-color: rgb(194, 80, 80);
 	color: white;
 	cursor: pointer;
+	text-align: center;
+	line-height: 25px;
 }
 
 @keyframes enter {

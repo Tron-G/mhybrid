@@ -49,6 +49,7 @@
 			<button @click="redraw">redraw</button>
 		</div>
 		<search ref="cp_search" @search-click="computeMultiRoute"></search>
+		<boxplot ref="cp_boxplot"></boxplot>
 	</div>
 </template>
 
@@ -58,11 +59,12 @@
 import * as mapdrawer from "assets/js/drawMapFigure";
 import { request, requestAnimation } from "../network/request.js";
 import search from "@/components/search";
-
+import boxplot from "@/components/boxplot";
 export default {
 	name: "HomeView",
 	components: {
 		search,
+		boxplot,
 	},
 	data() {
 		return {
@@ -82,6 +84,8 @@ export default {
 			detail_map_opt: null,
 			// 社区街道详细网络原始数据
 			detail_net: null,
+			// 缓存推荐路线数据
+			route_data: null,
 		};
 	},
 	created() {
@@ -275,6 +279,9 @@ export default {
 				case "detail_net":
 					if (!this.detail_net) this.detail_net = requested_data;
 					break;
+				case "multi_route":
+					if (!this.route_data) this.route_data = requested_data;
+					break;
 				default:
 					break;
 			}
@@ -301,34 +308,31 @@ export default {
 			else this.$refs.cp_search.show();
 		},
 
+		/**
+		 * 监听搜索按钮，绘制多模式路线和相关的视图
+		 * @param {object} od_info 搜索框输入的od信息
+		 */
 		computeMultiRoute(od_info) {
-			console.log(od_info);
-
 			const origin_site = od_info["origin_site"],
 				destination_site = od_info["destination_site"];
+
+			// 重新请求后隐藏k线图面板
+			this.$refs.cp_boxplot.hide();
 
 			let that = this;
 			requestAnimation({
 				url: "/calc_multi_route",
 				method: "post",
 				data: { origin_site, destination_site },
-			}).then((res) => {
-				mapdrawer.drawMultiRoute(that.map, res);
-			});
-			// mapdrawer.drawMultiRoute(that.map, that.detail_net, {});
-			// requestAnimation({
-			// 	url: "/calc_multi_route",
-			// 	method: "post",
-			// 	data: { origin_site, destination_site },
-			// 	loadStart() {
-			// 		that.$refs.cp_load.show();
-			// 	},
-			// 	loadEnd() {
-			// 		that.$refs.cp_load.close();
-			// 	},
-			// }).then((res) => {
-			// 	console.log("routes", res);
-			// });
+			})
+				.then((res) => {
+					this.cachedData("route_data", res);
+					return res;
+				})
+				.then((res) => {
+					mapdrawer.drawMultiRoute(that.map, res.route);
+					this.$refs.cp_boxplot.show(res.all_history_Y);
+				});
 		},
 
 		//////////////////////////////////////////////////

@@ -3,6 +3,7 @@ import Minimap from "./mapboxgl-control-minimap"
 const mapboxgl = require("mapbox-gl");
 mapboxgl.Minimap = Minimap;
 
+// 展示的推荐路线数量
 const SHOW_ROUTE_NUM = 3;
 
 
@@ -12,7 +13,7 @@ const SHOW_ROUTE_NUM = 3;
  *@param {object} opt 可选地图初始化配置
  *@return {object}  地图实例对象
  */
-function initMap(container, opt) {
+function initMap(container, opt = {}) {
 
   mapboxgl.accessToken =
     "pk.eyJ1IjoieGlhb2JpZSIsImEiOiJja2pndjRhMzQ1d2JvMnltMDE2dnlkMGhrIn0.bCKzSCs5tHTIYk4xQ65doA";
@@ -483,7 +484,7 @@ function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
     paint_opt = {
       "line-color": "#888",
       "line-width": 5,
-      "line-opacity": 0.3
+      "line-opacity": 0.4
     }
   } else {
     paint_opt = {
