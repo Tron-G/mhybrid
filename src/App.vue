@@ -100,28 +100,4 @@ export default {
 .mapboxgl-ctrl-logo {
 	display: none !important;
 }
-#od_page {
-	/* text-align: center;
-	border: none;
-	color: #2c3e50;
-	display: inline-block;
-	cursor: pointer;
-	position: absolute;
-	top: 6%;
-	left: 0;
-	width: 95%;
-	height: 5%;
-	background-color: #dddddd;
-	font-size: 18px;
-	margin: 1px;
-	border-radius: 5px; */
-}
-/* nav a {
-	font-weight: bold;
-	color: #2c3e50;
-} */
-
-/* nav a.router-link-exact-active {
-	color: #42b983;
-} */
 </style>

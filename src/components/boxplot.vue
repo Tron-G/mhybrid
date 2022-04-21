@@ -42,7 +42,7 @@ export default {
 #boxplot {
 	position: absolute;
 	bottom: -350px;
-	left: 10px;
+	left: 50px;
 	width: 400px;
 	height: 350px;
 	background-color: white;

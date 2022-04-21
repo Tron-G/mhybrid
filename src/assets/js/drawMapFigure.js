@@ -4,7 +4,7 @@ const mapboxgl = require("mapbox-gl");
 mapboxgl.Minimap = Minimap;
 
 // 展示的推荐路线数量
-const SHOW_ROUTE_NUM = 3;
+const SHOW_ROUTE_NUM = 5;
 
 
 /**
@@ -354,9 +354,10 @@ function updateMinMap(map, data) {
  * 绘制多模式路线
  *@param {object} map 地图实例对象
  *@param {object} route_data 
+ *@param {number} show_index 需要高亮展示的路线
  */
-function drawMultiRoute(map, route_data) {
-  console.log(route_data);
+function drawMultiRoute(map, route_data, show_index = 0) {
+  // console.log(route_data);
   //防止总路线数量小于SHOW_ROUTE_NUM
   const route_num = Math.min(route_data.length, SHOW_ROUTE_NUM);
 
@@ -367,11 +368,17 @@ function drawMultiRoute(map, route_data) {
   // 尝试清除上次绘制的路线
   removeLayerByType(map, "multi_route");
 
-  for (let i = 0; i < route_num; i++) {
+
+  let data_copy = JSON.parse(JSON.stringify(route_data));
+  // 将需要高亮的路线交换到数组首位
+  [data_copy[0], data_copy[show_index]] = [data_copy[show_index], data_copy[0]];
+
+  // 防止候选路线覆盖在上层，先绘制候选路线
+  for (let i = route_num - 1; i >= 0; i--) {
     let draw_type = "candidate"
     if (i == 0) draw_type = "target"
-    drawLinkByType(map, route_data[i].link, "multi_route_link_data" + i, "multi_route_link" + i, draw_type)
-    drawNodeByType(map, route_data[i].node, "multi_route_node_data" + i, "multi_route_node" + i, draw_type)
+    drawLinkByType(map, data_copy[i].link, "multi_route_link_data" + i, "multi_route_link" + i, draw_type)
+    drawNodeByType(map, data_copy[i].node, "multi_route_node_data" + i, "multi_route_node" + i, draw_type)
   }
 
 }
@@ -468,6 +475,17 @@ function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
 
   let paint_opt = {}
   if (link_type == "target") {
+    let svgXML =
+      `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"> 
+              <path d="M529.6128 512L239.9232 222.4128 384.7168 77.5168 819.2 512 384.7168 946.4832 239.9232 801.5872z" p-id="9085" fill="#D7D5D5"></path> 
+          </svg>
+          `
+    let svgBase64 = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgXML)));
+    let arrowIcon = new Image(20, 20);
+    arrowIcon.src = svgBase64;
+    arrowIcon.onload = function() {
+      map.addImage('arrowIcon', arrowIcon)
+    }
     paint_opt = {
       "line-color": [
         'match',
@@ -503,6 +521,20 @@ function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
     },
     paint: paint_opt,
   });
+
+  if (link_type == "target") {
+    map.addLayer({
+      'id': 'arrowLayer',
+      'type': 'symbol',
+      'source': source_id,
+      'layout': {
+        'symbol-placement': 'line',
+        'symbol-spacing': 50, // 图标间隔，默认为250
+        'icon-image': 'arrowIcon', //箭头图标
+        'icon-size': 0.5
+      }
+    });
+  }
 }
 
 
@@ -556,6 +588,7 @@ function removeLayerByType(map, layer_type) {
   if (layer_type == "multi_route") {
     for (let i = 0; i < SHOW_ROUTE_NUM; i++) {
       if (map.getLayer("multi_route_link" + i) != undefined) {
+        map.removeLayer("arrowLayer");
         map.removeLayer("multi_route_link" + i);
         map.removeSource("multi_route_link_data" + i);
       }

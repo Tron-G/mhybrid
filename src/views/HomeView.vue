@@ -50,6 +50,12 @@
 		</div>
 		<search ref="cp_search" @search-click="computeMultiRoute"></search>
 		<boxplot ref="cp_boxplot"></boxplot>
+		<routepanel
+			ref="cp_routepanel"
+			@choose-route="switchRoute"
+			:route_attr="get_route_attr"
+			v-if="judge_route_data"
+		></routepanel>
 	</div>
 </template>
 
@@ -60,11 +66,14 @@ import * as mapdrawer from "assets/js/drawMapFigure";
 import { request, requestAnimation } from "../network/request.js";
 import search from "@/components/search";
 import boxplot from "@/components/boxplot";
+import routepanel from "@/components/routepanel.vue";
+
 export default {
 	name: "HomeView",
 	components: {
 		search,
 		boxplot,
+		routepanel,
 	},
 	data() {
 		return {
@@ -115,12 +124,21 @@ export default {
 		this.map.remove();
 		next();
 	},
+	computed: {
+		get_route_attr() {
+			if (this.route_data != null) return this.route_data.route_attr;
+			else return null;
+		},
+		judge_route_data() {
+			return this.route_data != null;
+		},
+	},
 	methods: {
 		drawRoute() {
 			// mapdrawer.drawRoute(this.map, this.$store.state.route_data);
 			// mapdrawer.drawTestLink(this.map);
 			// this.map.remove();
-			console.log(this.map.loaded());
+			// console.log(this.map.loaded());
 		},
 		redraw() {
 			// this.map = mapdrawer.initMap("map_view");
@@ -261,26 +279,27 @@ export default {
 		 @param {object} requested_data 后台返回的数据
 		 */
 		cachedData(data_type, requested_data) {
+			let copy_data = JSON.parse(JSON.stringify(requested_data));
 			switch (data_type) {
 				case "get_on":
-					if (!this.get_on_data) this.get_on_data = requested_data;
+					if (!this.get_on_data) this.get_on_data = copy_data;
 					break;
 				case "get_off":
-					if (!this.get_off_data) this.get_off_data = requested_data;
+					if (!this.get_off_data) this.get_off_data = copy_data;
 					break;
 				case "cluster_net":
 					if (!this.cluster_net) {
 						this.cluster_net_origin = JSON.parse(
 							JSON.stringify(requested_data)
 						);
-						this.cluster_net = JSON.parse(JSON.stringify(requested_data));
+						this.cluster_net = copy_data;
 					}
 					break;
 				case "detail_net":
-					if (!this.detail_net) this.detail_net = requested_data;
+					if (!this.detail_net) this.detail_net = copy_data;
 					break;
 				case "multi_route":
-					if (!this.route_data) this.route_data = requested_data;
+					this.route_data = copy_data;
 					break;
 				default:
 					break;
@@ -318,6 +337,7 @@ export default {
 
 			// 重新请求后隐藏k线图面板
 			this.$refs.cp_boxplot.hide();
+			if (this.judge_route_data) this.$refs.cp_routepanel.hide();
 
 			let that = this;
 			requestAnimation({
@@ -326,13 +346,22 @@ export default {
 				data: { origin_site, destination_site },
 			})
 				.then((res) => {
-					this.cachedData("route_data", res);
+					that.cachedData("multi_route", res);
 					return res;
 				})
 				.then((res) => {
 					mapdrawer.drawMultiRoute(that.map, res.route);
-					this.$refs.cp_boxplot.show(res.all_history_Y);
+					that.$refs.cp_boxplot.show(res.all_history_Y);
+					that.$refs.cp_routepanel.show();
 				});
+		},
+
+		/**
+		 * 监听推荐路线展示界面按钮，切换展示的当前路线
+		 * @param {number} index 子组件传出来的当前选择框id
+		 */
+		switchRoute(index) {
+			mapdrawer.drawMultiRoute(this.map, this.route_data.route, index);
 		},
 
 		//////////////////////////////////////////////////

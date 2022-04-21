@@ -6,7 +6,7 @@ const echarts = require("echarts");
  */
 function drawBoxplot(container, data) {
   //标题字体大小
-  const FONT_SIZE = 8
+  const FONT_SIZE = 9
 
   let chart = echarts.init(document.getElementById(container));
   chart.clear()
@@ -42,6 +42,7 @@ function drawBoxplot(container, data) {
     },
     legend: {
       top: "1%",
+      left: "20%",
       itemGap: 15,
       itemWidth: 15,
       itemHeight: 10,
@@ -61,6 +62,9 @@ function drawBoxplot(container, data) {
       type: 'category',
       boundaryGap: true,
       nameGap: 30,
+      axisLabel: {
+        fontSize: FONT_SIZE
+      },
       splitArea: {
         show: false
       },
@@ -71,6 +75,9 @@ function drawBoxplot(container, data) {
     yAxis: {
       type: 'value',
       name: 'Adaptation',
+      axisLabel: {
+        fontSize: FONT_SIZE
+      },
       splitLine: {
         show: true,
         lineStyle: {
