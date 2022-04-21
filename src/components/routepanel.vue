@@ -2,19 +2,61 @@
 	<div>
 		<div id="route_panel">
 			<div class="bartooltip"></div>
-			<div v-for="(item, index) in route_attr" :key="index" class="route_item">
-				<div class="route_attr_chart" :id="getViewId(index)"></div>
-				<div class="info">route index: {{ index }}</div>
-				<div class="btn_area">
-					<div
-						class="route_bt"
-						:id="getChooseId(index)"
-						@click="choseRoute(index)"
-						:class="isActive(index)"
-					>
-						show
+			<div id="sort_tip">sort by:</div>
+			<div id="sort_panel">
+				<div
+					id="time_bt"
+					class="btns sort_bt"
+					@click="sortResult('time')"
+					:class="{ active: now_sort == 'time' }"
+				>
+					time
+				</div>
+				<div
+					id="cost_bt"
+					class="btns sort_bt"
+					@click="sortResult('cost')"
+					:class="{ active: now_sort == 'cost' }"
+				>
+					cost
+				</div>
+				<div
+					id="transfer_bt"
+					class="btns sort_bt"
+					@click="sortResult('transfer')"
+					:class="{ active: now_sort == 'transfer' }"
+				>
+					transfer
+				</div>
+				<div
+					id="corbon_bt"
+					class="btns sort_bt"
+					@click="sortResult('carbon')"
+					:class="{ active: now_sort == 'carbon' }"
+				>
+					carbon
+				</div>
+			</div>
+			<div id="result_view">
+				<div
+					v-for="(item, index) in route_attr"
+					:key="index"
+					class="route_item"
+					:id="getItemId(index)"
+				>
+					<div class="route_attr_chart" :id="getViewId(index)"></div>
+					<div class="info">route index: {{ index }}</div>
+					<div class="btn_area">
+						<div
+							class="route_bt btns"
+							:id="getChooseId(index)"
+							@click="choseRoute(index)"
+							:class="isActive(index)"
+						>
+							show
+						</div>
+						<div class="route_bt btns" :id="getCarbonId(index)">carbon</div>
 					</div>
-					<div class="route_bt" :id="getCarbonId(index)">carbon</div>
 				</div>
 			</div>
 		</div>
@@ -33,12 +75,18 @@ export default {
 	},
 	data() {
 		return {
+			// 当前显示的路线id
 			show_index: 0,
+			// 当前的排序条件
+			now_sort: "time",
 		};
 	},
 	computed: {},
 	methods: {
 		//计算各个路线板块下的按钮id
+		getItemId(index) {
+			return "result_item" + index;
+		},
 		getViewId(index) {
 			return "route_view" + index;
 		},
@@ -77,11 +125,17 @@ export default {
 			for (let i = 0; i < data[0].length; i++)
 				d3drawer.drawBar(this.getViewId(i), data[0][i], data[1]);
 		},
-
+		// 监听选择的路线
 		choseRoute(index) {
 			if (index == this.show_index) return;
 			this.$emit("choose-route", index);
 			this.show_index = index;
+		},
+		// 点击按钮进行排序
+		sortResult(sort_type) {
+			if (sort_type == this.now_sort) return;
+			d3drawer.sortItem(this.route_attr, sort_type, this.now_sort);
+			this.now_sort = sort_type;
 		},
 
 		//转换数据格式
@@ -119,15 +173,40 @@ $div_height: 250px;
 	position: absolute;
 	left: 700px;
 	bottom: -$div_height;
-	width: 1100px;
+	width: 1250px;
 	height: $div_height;
 	background-color: white;
 	box-shadow: 0 0 10px #888888;
 	z-index: 9;
+}
+#sort_tip {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	width: 100px;
+	height: 10%;
+	// background-color: #e8e8e8;
+	font-family: Georgia, serif;
+	font-size: 20px;
+	font-weight: bold;
+}
+#sort_panel {
+	position: absolute;
+	top: 15%;
+	left: 10px;
+	width: 100px;
+	height: 70%;
+	// background-color: #ece8e8;
 	display: flex;
+	flex-direction: column;
 	justify-content: space-around;
 	align-items: center;
 }
+
+.sort_bt {
+	background-color: #ffb085;
+}
+
 .show_window {
 	animation-name: enter;
 	animation-duration: 1s;
@@ -157,6 +236,17 @@ $div_height: 250px;
 	100% {
 		bottom: -$div_height;
 	}
+}
+
+#result_view {
+	position: absolute;
+	top: 0;
+	left: 110px;
+	width: 1140px;
+	height: 100%;
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
 }
 
 .bartooltip {
@@ -221,18 +311,21 @@ $div_height: 250px;
 	// background-color: rgb(86, 223, 143);
 }
 
-.route_bt {
+.btns {
 	width: 80px;
 	height: 30px;
-	background-color: #74afce;
 	text-align: center;
 	line-height: 30px;
 	font-size: 19px;
 	font-family: Georgia, serif;
 	cursor: pointer;
 	border-radius: 5px;
-	color: white;
 	box-shadow: 0 0 5px #888888;
+}
+
+.route_bt {
+	background-color: #74afce;
+	color: white;
 }
 
 .active {

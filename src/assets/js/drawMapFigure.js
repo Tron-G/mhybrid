@@ -484,7 +484,8 @@ function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
     let arrowIcon = new Image(20, 20);
     arrowIcon.src = svgBase64;
     arrowIcon.onload = function() {
-      map.addImage('arrowIcon', arrowIcon)
+      if (map.hasImage("arrowIcon") != true)
+        map.addImage('arrowIcon', arrowIcon)
     }
     paint_opt = {
       "line-color": [
@@ -586,9 +587,14 @@ function removeLayerByType(map, layer_type) {
   }
   // 移除推荐路线
   if (layer_type == "multi_route") {
+    let arrow_removed = false;
     for (let i = 0; i < SHOW_ROUTE_NUM; i++) {
       if (map.getLayer("multi_route_link" + i) != undefined) {
-        map.removeLayer("arrowLayer");
+        if (!arrow_removed) {
+          map.removeLayer("arrowLayer");
+          arrow_removed = true;
+        }
+
         map.removeLayer("multi_route_link" + i);
         map.removeSource("multi_route_link_data" + i);
       }

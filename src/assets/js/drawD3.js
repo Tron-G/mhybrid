@@ -77,15 +77,74 @@ function drawBar(container, data, max_data) {
       .attr("y", 20)
       .text(bar_title[i])
   }
-
-
 }
 
 function removeAllSvg() {
   d3.selectAll("svg").remove();
 }
+/**
+ * 按照条件对结果面板排序并绘制交换动画
+ *@param {Object} data [time, cost, transfer, carbon]
+ *@param {string} now_sort 当前点击的排序条件
+ *@param {string} last_sort 上一次的排序条件
+ */
+function sortItem(data, now_sort, last_sort) {
+  console.log(data);
+  // 首先获取各个小面板的横坐标，便于计算交换位置
+  let item_pos = [];
+  // console.log(last_sort, now_sort);
+  // 查询原始数据中的键名表
+  const alias = {
+    "time": "cost_time",
+    "cost": "cost_money",
+    "transfer": "transfer_time",
+    "carbon": "route_carbon",
+  }
+
+  for (let i = 0; i < 5; i++) {
+    let items = document.getElementById("result_item" + i)
+    let parent = items.offsetParent;
+    item_pos.push(items.getBoundingClientRect().left - parent.getBoundingClientRect().left)
+  }
+
+  item_pos = item_pos.sort((a, b) => {
+    return a - b;
+  });
+
+  let key = alias[last_sort];
+  // 自定义排序函数
+  function rule(a, b) {
+    return a[key] - b[key]
+  }
+
+  let last_sort_list = JSON.parse(JSON.stringify(data)).sort(rule);
+  key = alias[now_sort];
+  let now_sort_list = JSON.parse(JSON.stringify(data)).sort(rule);
+
+  // console.log(last_sort_list, now_sort_list);
+  let last_index = [],
+    now_index = [];
+  last_sort_list.forEach(element => {
+    last_index.push(element["route_id"])
+  });
+  now_sort_list.forEach(element => {
+    now_index.push(element["route_id"])
+  })
+
+  for (let i = 0; i < now_index.length; i++) {
+    if (now_index[i] != last_index[i]) {
+      let move = item_pos[i] - item_pos[now_index[i]]
+      d3.select("#result_item" + now_index[i]).transition().duration(500).style('left', move + 'px')
+    }
+  }
+}
+
+
+
+
 
 export {
   drawBar,
-  removeAllSvg
+  removeAllSvg,
+  sortItem
 }
