@@ -50,12 +50,19 @@
 						<div
 							class="route_bt btns"
 							:id="getChooseId(index)"
-							@click="choseRoute(index)"
+							@click="chooseRoute(index)"
 							:class="isActive(index)"
 						>
 							show
 						</div>
-						<div class="route_bt btns" :id="getCarbonId(index)">carbon</div>
+						<div
+							class="route_bt btns"
+							:id="getCarbonId(index)"
+							@click="showRouteCarbon(index)"
+							:class="isCarbonActive(index)"
+						>
+							carbon
+						</div>
 					</div>
 				</div>
 			</div>
@@ -77,6 +84,8 @@ export default {
 		return {
 			// 当前显示的路线id
 			show_index: 0,
+			// 当前显示的碳轨迹id，默认不显示
+			show_carbon: -1,
 			// 当前的排序条件
 			now_sort: "time",
 		};
@@ -99,6 +108,9 @@ export default {
 		isActive(index) {
 			return { active: index == this.show_index };
 		},
+		isCarbonActive(index) {
+			return { active: index == this.show_carbon };
+		},
 		show() {
 			let route = document.getElementById("route_panel");
 			if (
@@ -116,7 +128,11 @@ export default {
 				route.classList.remove("show_window");
 				route.classList.add("hide_window");
 				d3drawer.removeAllSvg();
+				// 隐藏窗口的同时初始化各个选项
 				this.show_index = 0;
+				this.now_sort = "time";
+				this.show_carbon = -1;
+				d3drawer.resetItemPos();
 			}
 		},
 
@@ -125,17 +141,32 @@ export default {
 			for (let i = 0; i < data[0].length; i++)
 				d3drawer.drawBar(this.getViewId(i), data[0][i], data[1]);
 		},
-		// 监听选择的路线
-		choseRoute(index) {
+		// 监听选择的路线, 只展示多模式路线，只能返回0到4
+		chooseRoute(index) {
 			if (index == this.show_index) return;
 			this.$emit("choose-route", index);
 			this.show_index = index;
+			this.show_carbon = -1;
+		},
+		// 监听选择路线的碳排放轨迹，同时展示多模式路线和碳排放，返回的状态码加10
+		showRouteCarbon(index) {
+			if (index == this.show_carbon) return;
+			//展示碳排放轨迹之前切换选择路线
+			if (index != this.show_index) this.show_index = index;
+			this.show_carbon = index;
+			this.$emit("choose-route", index + 10);
 		},
 		// 点击按钮进行排序
 		sortResult(sort_type) {
 			if (sort_type == this.now_sort) return;
-			d3drawer.sortItem(this.route_attr, sort_type, this.now_sort);
+			let new_index = d3drawer.sortItem(
+				this.route_attr,
+				sort_type,
+				this.now_sort
+			);
 			this.now_sort = sort_type;
+			this.show_carbon = -1;
+			this.chooseRoute(new_index);
 		},
 
 		//转换数据格式
@@ -332,5 +363,6 @@ $div_height: 250px;
 	cursor: not-allowed;
 	/* pointer-events: none; */
 	background-color: gray;
+	box-shadow: 0 0 0px white;
 }
 </style>

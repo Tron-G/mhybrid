@@ -361,13 +361,19 @@ function drawMultiRoute(map, route_data, show_index = 0) {
   //防止总路线数量小于SHOW_ROUTE_NUM
   const route_num = Math.min(route_data.length, SHOW_ROUTE_NUM);
 
+  // 判断是否显示碳轨迹
+  let show_carbon = false;
+  if (show_index >= 10) {
+    show_carbon = true;
+    show_index -= 10;
+  }
+
   // 更新地图，隐藏边，更改节点透明度
   removeLayerByType(map, "community_link");
   map.setPaintProperty("community_node", "circle-opacity", 0.3)
 
   // 尝试清除上次绘制的路线
   removeLayerByType(map, "multi_route");
-
 
   let data_copy = JSON.parse(JSON.stringify(route_data));
   // 将需要高亮的路线交换到数组首位
@@ -376,7 +382,10 @@ function drawMultiRoute(map, route_data, show_index = 0) {
   // 防止候选路线覆盖在上层，先绘制候选路线
   for (let i = route_num - 1; i >= 0; i--) {
     let draw_type = "candidate"
-    if (i == 0) draw_type = "target"
+    if (i == 0 && show_carbon == false)
+      draw_type = "target"
+    else if (i == 0 && show_carbon == true)
+      draw_type = "carbon"
     drawLinkByType(map, data_copy[i].link, "multi_route_link_data" + i, "multi_route_link" + i, draw_type)
     drawNodeByType(map, data_copy[i].node, "multi_route_node_data" + i, "multi_route_node" + i, draw_type)
   }
@@ -389,11 +398,11 @@ function drawMultiRoute(map, route_data, show_index = 0) {
  *@param {object} data 
  *@param {String} source_id 图层数据id
  *@param {String} layer_id 图层id
- *@param {String} node_type 节点样式，路线展示节点，候选路线节点，街道网络节点 "target"||"candidate"||"default"
+ *@param {String} node_type 节点样式，路线展示节点，候选路线节点，街道网络节点 "target"||"candidate"||"carbon"||"default"
  */
 function drawNodeByType(map, data, source_id, layer_id, node_type = "default") {
   let paint_opt = {}
-  if (node_type == "target") {
+  if (node_type == "target" || node_type == "carbon") {
     paint_opt = {
       "circle-radius": ["interpolate", ["linear"],
         ["zoom"],
@@ -464,7 +473,7 @@ function drawNodeByType(map, data, source_id, layer_id, node_type = "default") {
  *@param {object} data 
  *@param {String} source_id 图层数据id
  *@param {String} layer_id 图层id
- *@param {String} link_type 边样式，路线展示边，候选路线边，街道网络边 "target"||"candidate"||"default"
+ *@param {String} link_type 边样式，路线展示边，候选路线边，碳轨迹，街道网络边 "target"||"candidate"||"carbon"||"default"
  */
 function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
 
@@ -475,18 +484,6 @@ function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
 
   let paint_opt = {}
   if (link_type == "target") {
-    let svgXML =
-      `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"> 
-              <path d="M529.6128 512L239.9232 222.4128 384.7168 77.5168 819.2 512 384.7168 946.4832 239.9232 801.5872z" p-id="9085" fill="#D7D5D5"></path> 
-          </svg>
-          `
-    let svgBase64 = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgXML)));
-    let arrowIcon = new Image(20, 20);
-    arrowIcon.src = svgBase64;
-    arrowIcon.onload = function() {
-      if (map.hasImage("arrowIcon") != true)
-        map.addImage('arrowIcon', arrowIcon)
-    }
     paint_opt = {
       "line-color": [
         'match',
@@ -504,6 +501,13 @@ function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
       "line-color": "#888",
       "line-width": 5,
       "line-opacity": 0.4
+    }
+  } else if (link_type == "carbon") {
+    // 碳排放轨迹
+    paint_opt = {
+      "line-color": ['get', 'carbon_heat_color'],
+      "line-width": 10,
+      "line-opacity": 1
     }
   } else {
     paint_opt = {
@@ -523,7 +527,22 @@ function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
     paint: paint_opt,
   });
 
-  if (link_type == "target") {
+
+  // 添加箭头图层
+  if (link_type == "target" || link_type == "carbon") {
+    if (map.hasImage("arrowIcon") != true) {
+      let svgXML =
+        `<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg"> 
+              <path d="M529.6128 512L239.9232 222.4128 384.7168 77.5168 819.2 512 384.7168 946.4832 239.9232 801.5872z" p-id="9085" fill="#D7D5D5"></path> 
+          </svg>
+          `
+      let svgBase64 = 'data:image/svg+xml;base64,' + window.btoa(unescape(encodeURIComponent(svgXML)));
+      let arrowIcon = new Image(20, 20);
+      arrowIcon.src = svgBase64;
+      arrowIcon.onload = function() {
+        map.addImage('arrowIcon', arrowIcon)
+      }
+    }
     map.addLayer({
       'id': 'arrowLayer',
       'type': 'symbol',

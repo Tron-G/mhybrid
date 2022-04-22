@@ -311,11 +311,6 @@ export default {
 		listenPage() {
 			window.onbeforeunload = function (e) {
 				this.map.remove();
-				// e = e || window.event;
-				// if (e) {
-				// 	e.returnValue = "关闭提示";
-				// }
-				// return "关闭提示";
 			};
 		},
 
@@ -363,7 +358,6 @@ export default {
 		switchRoute(index) {
 			mapdrawer.drawMultiRoute(this.map, this.route_data.route, index);
 		},
-
 		//////////////////////////////////////////////////
 	},
 };

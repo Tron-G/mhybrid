@@ -89,7 +89,7 @@ function removeAllSvg() {
  *@param {string} last_sort 上一次的排序条件
  */
 function sortItem(data, now_sort, last_sort) {
-  console.log(data);
+  // console.log(data);
   // 首先获取各个小面板的横坐标，便于计算交换位置
   let item_pos = [];
   // console.log(last_sort, now_sort);
@@ -137,14 +137,23 @@ function sortItem(data, now_sort, last_sort) {
       d3.select("#result_item" + now_index[i]).transition().duration(500).style('left', move + 'px')
     }
   }
+  return now_index[0];
 }
 
-
+/**
+ * 重置子面板的相对位置
+ */
+function resetItemPos() {
+  for (let i = 0; i < 5; i++) {
+    d3.select("#result_item" + i).style('left', 0 + 'px')
+  }
+}
 
 
 
 export {
   drawBar,
   removeAllSvg,
-  sortItem
+  sortItem,
+  resetItemPos
 }
