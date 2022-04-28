@@ -2,6 +2,15 @@
 	<div id="map_view">
 		<div id="od_panel" class="panel">
 			<div
+				@click="drawCarbonHeat()"
+				id="all_carbon"
+				class="btn"
+				:class="{ active: show_status == 'carbon' }"
+			>
+				carbon
+			</div>
+
+			<div
 				@click="switchDrawType('get_on')"
 				id="geton_bt"
 				class="btn"
@@ -44,12 +53,17 @@
 				detail
 			</div>
 		</div>
-		<div id="test_btn">
+		<!-- <div id="test_btn">
 			<button @click="drawRoute">draw</button>
 			<button @click="redraw">redraw</button>
-		</div>
-		<search ref="cp_search" @search-click="computeMultiRoute"></search>
+		</div> -->
+		<search
+			ref="cp_search"
+			@search-click="computeMultiRoute"
+			@insert-click="addMarker"
+		></search>
 		<boxplot ref="cp_boxplot"></boxplot>
+		<trafficpie ref="cp_trafficpie"></trafficpie>
 		<routepanel
 			ref="cp_routepanel"
 			@choose-route="switchRoute"
@@ -67,6 +81,7 @@ import { request, requestAnimation } from "../network/request.js";
 import search from "@/components/search";
 import boxplot from "@/components/boxplot";
 import routepanel from "@/components/routepanel.vue";
+import trafficpie from "@/components/trafficpie";
 
 export default {
 	name: "HomeView",
@@ -74,6 +89,7 @@ export default {
 		search,
 		boxplot,
 		routepanel,
+		trafficpie,
 	},
 	data() {
 		return {
@@ -95,6 +111,10 @@ export default {
 			detail_net: null,
 			// 缓存推荐路线数据
 			route_data: null,
+			// 全岛碳排放数据
+			carbon_data: null,
+			// 是否添加了标记点击监听事件
+			add_status: false,
 		};
 	},
 	created() {
@@ -115,6 +135,10 @@ export default {
 				mapdrawer.drawClusterNet(this.map.min_map, res, true);
 			});
 
+		this.requestData("carbon").then((res) => {
+			this.cachedData("carbon", res);
+		});
+
 		// 预先缓存街道网络数据
 		this.requestData("detail_net").then((res) => {
 			this.cachedData("detail_net", res);
@@ -134,6 +158,16 @@ export default {
 		},
 	},
 	methods: {
+		/**
+		 * 绘制全岛碳排放热力图
+		 */
+		drawCarbonHeat() {
+			this.map.remove();
+			this.map = mapdrawer.initMap("map_view");
+			mapdrawer.carbonHeat(this.map, this.carbon_data);
+			this.show_status = "carbon";
+		},
+
 		drawRoute() {
 			// mapdrawer.drawRoute(this.map, this.$store.state.route_data);
 			// mapdrawer.drawTestLink(this.map);
@@ -145,18 +179,23 @@ export default {
 		},
 
 		/**
-		 * g根据点击按钮切换绘图类型，上车，下车，不显示
+		 * 根据点击按钮切换绘图类型，上车，下车，不显示
 		 *@param {string} draw_type "get_on"|| "get_off"|| "hidden"
 		 */
 		switchDrawType(draw_type) {
 			if (this.show_status == draw_type) return;
-			// 概览视图下切换上下车热点
+			// 无论是概览还是详细，当前不是hidden状态就重置地图
 			if (this.show_status != "hidden") this.resetMap();
 			if (this.show_status != "hidden" && !this.is_overview) {
 				// 详细视图下切换上下车热点
 				this.requestData("detail_net").then((res) => {
 					this.cachedData("detail_net", res);
-					mapdrawer.drawNetwork(this.map, res);
+					mapdrawer.drawNetwork(
+						this.map,
+						res.network,
+						re.station,
+						this.showPie
+					);
 				});
 			}
 			if (draw_type == "hidden") {
@@ -184,12 +223,18 @@ export default {
 			if (show_type == "overview") {
 				this.is_overview = true;
 				this.show_status = "hidden";
+				this.closeAllWindow();
 				this.resetMap();
 			} else {
 				// 跳转到社区详细视图,同时更新小地图上选中节点的颜色
 				this.is_overview = false;
-				mapdrawer.removeLayerByType(this.map, "cluster_net");
-				mapdrawer.updateMinMap(this.map, this.cluster_net);
+				if (this.show_status != "carbon") {
+					mapdrawer.removeLayerByType(this.map, "cluster_net");
+					mapdrawer.updateMinMap(this.map, this.cluster_net);
+				} else {
+					mapdrawer.removeLayerByType(this.map, "carbon");
+					mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
+				}
 
 				//此处应该动态计算中心坐标
 				if (!this.detail_map_opt)
@@ -210,7 +255,12 @@ export default {
 					if (!is_draw) {
 						this.requestData("detail_net").then((res) => {
 							this.cachedData("detail_net", res);
-							mapdrawer.drawNetwork(this.map, res);
+							mapdrawer.drawNetwork(
+								this.map,
+								res.network,
+								res.station,
+								this.showPie
+							);
 						});
 						is_draw = true;
 					}
@@ -218,6 +268,16 @@ export default {
 			}
 			this.searchWindow();
 		},
+
+		/**
+		 * 切换到概览视图后隐藏无关面板
+		 */
+		closeAllWindow() {
+			this.$refs.cp_boxplot.hide();
+			this.$refs.cp_trafficpie.hide();
+			if (this.judge_route_data) this.$refs.cp_routepanel.hide();
+		},
+
 		/**
 		 * 重置社区网络数据
 		 */
@@ -235,6 +295,7 @@ export default {
 				mapdrawer.drawClusterNet(this.map, this.cluster_net);
 				mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
 			} else {
+				// 详细街道视图下重置地图
 				this.map = mapdrawer.initMap("map_view", {
 					center: this.detail_map_opt.center,
 					zoom: this.detail_map_opt.zoom,
@@ -263,6 +324,9 @@ export default {
 			} else if (data_type == "detail_net") {
 				datas = this.detail_net;
 				urls = "/get_community_network";
+			} else if (data_type == "carbon") {
+				datas = this.carbon_data;
+				urls = "/get_carbon_data";
 			}
 			if (datas == null) {
 				return request({ url: urls });
@@ -300,6 +364,9 @@ export default {
 					break;
 				case "multi_route":
 					this.route_data = copy_data;
+					break;
+				case "carbon":
+					if (!this.carbon_data) this.carbon_data = copy_data;
 					break;
 				default:
 					break;
@@ -352,11 +419,35 @@ export default {
 		},
 
 		/**
+		 * 监听添加站点按钮，添加或者移除点击事件
+		 */
+		addMarker() {
+			if (!this.add_status) {
+				mapdrawer.addMarkerByClick(this.map);
+				this.add_status = true;
+			} else {
+				mapdrawer.removeMarkerClick(this.map);
+				this.add_status = false;
+			}
+		},
+
+		/**
 		 * 监听推荐路线展示界面按钮，切换展示的当前路线
 		 * @param {number} index 子组件传出来的当前选择框id
 		 */
 		switchRoute(index) {
 			mapdrawer.drawMultiRoute(this.map, this.route_data.route, index);
+		},
+		/**
+		 * 展示被点击的街道流量信息
+		 * @param {string} street_name 需要展示流量信息的街道名称
+		 */
+		showPie(street_name) {
+			let flow_data = this.detail_net.traffic_flow;
+			this.$refs.cp_trafficpie.hide();
+			setTimeout(() => {
+				this.$refs.cp_trafficpie.show(street_name, flow_data[street_name]);
+			}, 500);
 		},
 		//////////////////////////////////////////////////
 	},

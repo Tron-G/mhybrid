@@ -141,7 +141,9 @@ function drawBoxplot(container, data) {
   // return chart;
 }
 
-//计算二维数组中每个数组的平均值，返回一维平均数数组
+/**
+ * 计算二维数组中每个数组的平均值，返回一维平均数数组
+ */
 function calc_avg(arrs) {
   let result = []
   for (let i = 0; i < arrs.length; i++) {
@@ -157,6 +159,69 @@ function calc_avg(arrs) {
   }
 }
 
+
+/**
+ * 绘制街道24小时流量图
+ */
+function drawPieChart(container, title, data) {
+
+  //数据格式：[{
+  //   'value': 4403, 流量
+  //   'name': 0 时间
+  // },]
+  let dom = document.getElementById(container);
+  let myChart = echarts.init(dom);
+  myChart.clear()
+  let option;
+  let chart_title = "traffic flow of " + title
+  option = {
+    title: {
+      text: chart_title,
+      left: "center",
+      bottom: "2%",
+      textStyle: {
+        fontSize: 15
+      },
+    },
+    // legend: {
+    //   show: false,
+    //   top: 'bottom'
+    // },
+    tooltip: {
+      trigger: 'item',
+      // formatter: '{a}<br /> {b} -> {c}'
+    },
+    series: [{
+      name: 'traffic flow',
+      type: 'pie',
+      radius: ["20%", "90%"],
+      center: ['50%', '50%'],
+      roseType: 'area',
+      itemStyle: {
+        borderRadius: 8
+      },
+      itemStyle: {
+        color: '#5B98D1',
+        borderColor: '#FFFFFF',
+        borderWidth: 2,
+        borderRadius: 8
+      },
+      label: {
+        formatter: '{b}',
+        position: 'inside',
+        color: "#000000"
+      },
+      data: data
+    }]
+  };
+  if (option && typeof option === 'object') {
+    myChart.setOption(option);
+  }
+}
+
+
+
 export {
-  drawBoxplot
+  drawBoxplot,
+  drawPieChart
 }

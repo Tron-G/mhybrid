@@ -145,15 +145,15 @@ function drawPoint(map, data, draw_type) {
           "interpolate",
           ["linear"],
           ["zoom"],
-          10, 3,
-          15, 20
+          10, 5,
+          15, 30
         ],
         // Transition from heatmap to circle layer by zoom level
         "heatmap-opacity": [
           "interpolate",
           ["linear"],
           ["zoom"],
-          10.5, 1,
+          10.5, 0.8,
           16, 0
         ],
       }
@@ -326,7 +326,8 @@ function drawClusterNet(map, net_data, is_minmap = false) {
  *@param {object} map 地图实例对象
  *@param {object} 
  */
-function drawNetwork(map, net_data) {
+function drawNetwork(map, net_data, station_data, call_back = null) {
+
   if (map.loaded())
     ondraw();
   else
@@ -335,8 +336,58 @@ function drawNetwork(map, net_data) {
     })
 
   function ondraw() {
+    drawBike()
     drawLinkByType(map, net_data.link, "community_link_data", "community_link");
-    drawNodeByType(map, net_data.node, "community_node_data", "community_node");
+    drawNodeByType(map, net_data.node, "community_node_data", "community_node", true, "default", call_back);
+  }
+
+  function drawBike() {
+    // 添加自行车站点图标
+    let src = require('../img/bike.png');
+    if (!map.hasImage("arrowIcon")) {
+      map.loadImage(src, (error, image) => {
+        if (error) throw error;
+        // Add the image to the map style.
+        map.addImage('bike', image);
+      });
+    }
+    // 添加标记图标
+    let mark_icon = require('../img/mark.png');
+    if (!map.hasImage("markIcon")) {
+      map.loadImage(mark_icon, (error, image) => {
+        if (error) throw error;
+        // Add the image to the map style.
+        map.addImage('mark', image);
+      });
+    }
+
+    map.addSource('station_places', {
+      "type": "geojson",
+      "data": station_data
+    });
+    map.addLayer({
+      "id": "station_layer",
+      "type": "symbol",
+      "source": "station_places",
+      "minzoom": 13.5,
+      "layout": {
+        "icon-image": "bike",
+        "icon-allow-overlap": true,
+        'icon-size': 0.11,
+        // "text-field": "bike",
+        // "text-allow-overlap": true,
+        // "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
+        // "text-size": 9,
+        // "text-transform": "uppercase",
+        // "text-letter-spacing": 0.05,
+        // "text-offset": [0, 1.5]
+      },
+      "paint": {
+        "text-color": "#202",
+        "text-halo-color": "#fff",
+        "text-halo-width": 2
+      }
+    });
   }
 }
 
@@ -387,7 +438,7 @@ function drawMultiRoute(map, route_data, show_index = 0) {
     else if (i == 0 && show_carbon == true)
       draw_type = "carbon"
     drawLinkByType(map, data_copy[i].link, "multi_route_link_data" + i, "multi_route_link" + i, draw_type)
-    drawNodeByType(map, data_copy[i].node, "multi_route_node_data" + i, "multi_route_node" + i, draw_type)
+    drawNodeByType(map, data_copy[i].node, "multi_route_node_data" + i, "multi_route_node" + i, false, draw_type)
   }
 
 }
@@ -398,9 +449,11 @@ function drawMultiRoute(map, route_data, show_index = 0) {
  *@param {object} data 
  *@param {String} source_id 图层数据id
  *@param {String} layer_id 图层id
+ *@param {Boolean} map_event 是否添加鼠标事件，防止重复触发
  *@param {String} node_type 节点样式，路线展示节点，候选路线节点，街道网络节点 "target"||"candidate"||"carbon"||"default"
+ *@param {function} call_back 回调函数，触发鼠标点击事件之后的绘制
  */
-function drawNodeByType(map, data, source_id, layer_id, node_type = "default") {
+function drawNodeByType(map, data, source_id, layer_id, map_event, node_type = "default", call_back = null) {
   let paint_opt = {}
   if (node_type == "target" || node_type == "carbon") {
     paint_opt = {
@@ -448,22 +501,32 @@ function drawNodeByType(map, data, source_id, layer_id, node_type = "default") {
     closeOnClick: false
   });
 
-  //鼠标悬浮显示节点名称
-  map.on('mouseenter', layer_id, function(e) {
-    map.getCanvas().style.cursor = 'pointer';
-    let coordinates = e.features[0].geometry.coordinates.slice();
-    const street_name = e.features[0].properties.name;
-    while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-    }
-    popup.setLngLat(coordinates)
-      .setText(street_name)
-      .addTo(map);
-  });
-  map.on('mouseleave', layer_id, function() {
-    map.getCanvas().style.cursor = '';
-    popup.remove();
-  });
+  if (map_event) {
+
+    //鼠标悬浮显示节点名称
+    map.on('mouseenter', layer_id, function(e) {
+      map.getCanvas().style.cursor = 'pointer';
+      let coordinates = e.features[0].geometry.coordinates.slice();
+      const street_name = e.features[0].properties.name;
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+      popup.setLngLat(coordinates)
+        .setText(street_name)
+        .addTo(map);
+    });
+    map.on('mouseleave', layer_id, function() {
+      map.getCanvas().style.cursor = '';
+      popup.remove();
+    });
+
+    map.on("click", layer_id, function(e) {
+      // console.log(e.features[0].properties.name);
+      const street_name = e.features[0].properties.name
+      call_back(street_name);
+    })
+  }
+
 
 }
 
@@ -526,7 +589,6 @@ function drawLinkByType(map, data, source_id, layer_id, link_type = "default") {
     },
     paint: paint_opt,
   });
-
 
   // 添加箭头图层
   if (link_type == "target" || link_type == "carbon") {
@@ -604,6 +666,10 @@ function removeLayerByType(map, layer_type) {
       map.removeSource("community_link_data");
     }
   }
+  if (layer_type == "carbon") {
+    map.removeLayer("carbon_layer");
+    map.removeSource("carbon_data");
+  }
   // 移除推荐路线
   if (layer_type == "multi_route") {
     let arrow_removed = false;
@@ -624,6 +690,151 @@ function removeLayerByType(map, layer_type) {
     }
   }
 }
+
+/**
+ * 绘制岛上碳排放热力图
+ */
+function carbonHeat(map, data) {
+  const source_id = "carbon_data",
+    layer_id = "carbon_layer"
+
+  map.on("load", () => {
+    map.addSource(source_id, {
+      type: "geojson",
+      data: data,
+    });
+    map.addLayer({
+      "id": layer_id,
+      "type": "heatmap",
+      "source": source_id,
+      "maxzoom": 16,
+      "paint": {
+        // Increase the heatmap weight based on frequency and property magnitude
+        "heatmap-weight": [
+          "interpolate",
+          ["linear"],
+          ["get", "carbon"],
+          0, 0,
+          2.4, 2
+        ],
+        // Increase the heatmap color weight weight by zoom level
+        // heatmap-intensity is a multiplier on top of heatmap-weight
+        "heatmap-intensity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          10, 1,
+          15, 3
+        ],
+        // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
+        // Begin color ramp at 0-stop with a 0-transparancy color
+        // to create a blur-like effect.
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0, "rgba(33,102,172,0)",
+          0.2, "#64e600",
+          0.4, "#fae600",
+          0.6, "#e69000",
+          0.8, "#e64800",
+          1, "#e60000"
+        ],
+        // Adjust the heatmap radius by zoom level
+        "heatmap-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          10, 15,
+          15, 30
+        ],
+        // Transition from heatmap to circle layer by zoom level
+        "heatmap-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          10.5, 1,
+          16, 0
+        ],
+      }
+    });
+
+  })
+  // map.addLayer({
+  //   id: draw_type,
+  //   source: draw_type + "_point",
+  //   type: "circle",
+  //   minzoom: 6,
+  //   paint: {
+  //     // 圆圈半径动态更改，根据缩放等级从9到16，将数据中的radius属性，线性映射[20, 50] -> [2,5] ->[20,50]
+  //     "circle-radius": ["interpolate", ["linear"],
+  //       ["zoom"],
+  //       9, 0.5,
+  //       16, 5
+  //     ],
+  //     "circle-opacity": [
+  //       "interpolate",
+  //       ["linear"],
+  //       ["zoom"],
+  //       14.2, 0,
+  //       17, 1
+  //     ],
+  //     "circle-color": point_color
+  //   },
+  // });
+}
+
+
+/**
+ * 添加点击事件标记站点
+ */
+function addMarkerByClick(map) {
+  map.on("click", drawMarker)
+}
+
+function drawMarker(e) {
+  let map = this;
+  const source_id = "mark_pos",
+    layer_id = "mark";
+  let coord = [e.lngLat.lng, e.lngLat.lat],
+    data = {
+      'type': 'FeatureCollection',
+      'features': [{
+        'type': 'Feature',
+        'geometry': {
+          'type': 'Point',
+          'coordinates': coord
+        }
+      }]
+    }
+
+  if (map.getLayer(layer_id) == undefined) {
+    map.addSource(source_id, {
+      'type': 'geojson',
+      'data': data
+    });
+
+    map.addLayer({
+      'id': layer_id,
+      'type': 'symbol',
+      'source': source_id,
+      'layout': {
+        'icon-image': 'mark',
+        'icon-size': 0.3,
+        'icon-offset': [0, -120],
+      }
+    });
+  } else {
+    map.getSource(source_id).setData(data);
+  }
+}
+/**
+ * 移除点击标记事件
+ */
+function removeMarkerClick(map) {
+  map.off("click", drawMarker)
+}
+
 
 
 function drawTestLink(map) {
@@ -668,5 +879,8 @@ export {
   drawTestLink,
   drawNetwork,
   updateMinMap,
-  drawMultiRoute
+  drawMultiRoute,
+  carbonHeat,
+  addMarkerByClick,
+  removeMarkerClick
 }

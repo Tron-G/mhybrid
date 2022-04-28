@@ -1,7 +1,9 @@
 <template>
 	<div>
 		<div id="search_panel">
+			<div id="from">From:</div>
 			<input type="text" id="origin_win" placeholder="Origin" name="origin" />
+			<div id="to">To:</div>
 			<input
 				type="text"
 				id="destination_win"
@@ -9,6 +11,7 @@
 				name="destination"
 			/>
 			<div id="search_btn" @click="searchClick()">search</div>
+			<div id="insert_btn" @click="insertClick()">add station</div>
 		</div>
 	</div>
 </template>
@@ -25,6 +28,9 @@ export default {
 			const origin_site = document.getElementById("origin_win").value,
 				destination_site = document.getElementById("destination_win").value;
 			this.$emit("search-click", { origin_site, destination_site });
+		},
+		insertClick() {
+			this.$emit("insert-click");
 		},
 		show() {
 			let search_panel = document.getElementById("search_panel");
@@ -50,46 +56,86 @@ export default {
 <style scoped>
 #search_panel {
 	position: absolute;
-	top: -80px;
+	top: -90px;
 	left: 15%;
 	width: 280px;
-	height: 50px;
+	height: 90px;
 	background-color: white;
 	box-shadow: 0 0 10px #888888;
 	z-index: 9;
 }
 
-#origin_win {
+#from {
 	position: absolute;
 	top: 15px;
-	left: 20px;
+	left: 0;
 	width: 55px;
 	height: 20px;
+	font-size: 15px;
+	text-align: center;
+	font-weight: bold;
+}
+
+#origin_win {
+	position: absolute;
+	top: 12px;
+	left: 55px;
+	width: 80px;
+	height: 20px;
+}
+
+#to {
+	position: absolute;
+	top: 55px;
+	left: 0;
+	width: 55px;
+	height: 20px;
+	font-size: 15px;
+	text-align: center;
+	font-weight: bold;
 }
 
 #destination_win {
 	position: absolute;
-	top: 15px;
-	left: 100px;
-	width: 55px;
+	top: 50px;
+	left: 55px;
+	width: 80px;
 	height: 20px;
 }
 #search_btn {
 	position: absolute;
 	top: 15px;
-	left: 180px;
-	width: 60px;
+	left: 170px;
+	width: 90px;
 	height: 25px;
 	background-color: rgb(194, 80, 80);
 	color: white;
+	box-shadow: 0 0 6px #888888;
+	border-radius: 5px;
 	cursor: pointer;
 	text-align: center;
 	line-height: 25px;
+	user-select: none;
 }
 
+#insert_btn {
+	position: absolute;
+	top: 50px;
+	left: 170px;
+	width: 90px;
+	height: 25px;
+	background-color: rgb(231, 162, 71);
+	color: white;
+	box-shadow: 0 0 6px #888888;
+	border-radius: 5px;
+	cursor: pointer;
+	text-align: center;
+	line-height: 25px;
+	user-select: none;
+}
 @keyframes enter {
 	0% {
-		top: -80px;
+		top: -90px;
 	}
 
 	100% {
@@ -103,7 +149,7 @@ export default {
 	}
 
 	100% {
-		top: -80px;
+		top: -90px;
 	}
 }
 
