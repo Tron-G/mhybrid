@@ -219,9 +219,82 @@ function drawPieChart(container, title, data) {
   }
 }
 
+/**
+ * 绘制多个街道24小时流量图
+ *@param {String} container 视图div的id
+ *@param {Object} title 街道名称数组  
+ *@param {Object} data 街道流量数组
+ *@param {function} clear_func 清除绘图数据的回调函数
+ */
+function drawPie(container, title, data, clear_func) {
+  let dom = document.getElementById(container);
+  let myChart = echarts.init(dom);
+  myChart.clear()
+  let option;
+  let series_data = []
 
+  for (let i = 0; i < title.length; i++) {
+    let tmp = {
+      type: 'bar',
+      data: data[i],
+      coordinateSystem: 'polar',
+      name: title[i],
+      stack: 'a',
+      emphasis: {
+        focus: 'series'
+      },
+      itemStyle: {
+        opacity: 0.8
+      },
+    }
+    series_data.push(tmp)
+  }
+
+  option = {
+    angleAxis: {
+      type: 'category',
+      data: ['0', '1', '2', '3', '4', '5', '6', "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"]
+    },
+    radiusAxis: {
+      // type: 'log',
+      // logBase: 10,
+      // min: 0,
+    },
+    polar: {
+      center: ["50%", "55%"],
+      radius: "80%"
+    },
+    series: series_data,
+    legend: {
+      show: true,
+      data: title
+    },
+
+    toolbox: {
+      feature: {
+        myTool1: {
+          show: true,
+          title: '清除',
+          icon: 'path://M861.184 192.512q30.72 0 50.688 10.24t31.744 25.6 16.384 33.28 4.608 33.28q0 7.168-0.512 11.264t-0.512 7.168l0 6.144-67.584 0 0 537.6q0 20.48-8.192 39.424t-23.552 33.28-37.376 23.04-50.688 8.704l-456.704 0q-26.624 0-50.176-8.192t-40.448-23.04-26.624-35.84-9.728-47.616l0-527.36-63.488 0q-1.024-1.024-1.024-5.12-1.024-5.12-1.024-31.744 0-13.312 6.144-29.696t18.432-30.208 31.744-23.04 46.08-9.216l91.136 0 0-62.464q0-26.624 18.432-45.568t45.056-18.944l320.512 0q35.84 0 49.664 18.944t13.824 45.568l0 63.488q21.504 1.024 46.08 1.024l47.104 0zM384 192.512l320.512 0 0-64.512-320.512 0 0 64.512zM352.256 840.704q32.768 0 32.768-41.984l0-475.136-63.488 0 0 475.136q0 21.504 6.656 31.744t24.064 10.24zM545.792 839.68q17.408 0 23.552-9.728t6.144-31.232l0-475.136-63.488 0 0 475.136q0 40.96 33.792 40.96zM738.304 837.632q18.432 0 24.576-9.728t6.144-31.232l0-473.088-64.512 0 0 473.088q0 40.96 33.792 40.96z',
+          onclick: function() {
+            clear_func();
+            myChart.clear()
+          }
+        }
+      }
+    }
+
+  };
+
+
+
+  if (option && typeof option === 'object') {
+    myChart.setOption(option);
+  }
+}
 
 export {
   drawBoxplot,
-  drawPieChart
+  // drawPieChart,
+  drawPie
 }

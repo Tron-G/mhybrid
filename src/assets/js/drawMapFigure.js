@@ -324,7 +324,9 @@ function drawClusterNet(map, net_data, is_minmap = false) {
 /**
  * 绘制详细网络图
  *@param {object} map 地图实例对象
- *@param {object} 
+ *@param {object} net_data 街道网络数据，点和线的geo数据
+ *@param {object} station_data 自行车站点数据
+ *@param {object} call_back 点击节点展示街道流量图的回调函数
  */
 function drawNetwork(map, net_data, station_data, call_back = null) {
 
@@ -336,7 +338,7 @@ function drawNetwork(map, net_data, station_data, call_back = null) {
     })
 
   function ondraw() {
-    drawBike()
+    drawBike();
     drawLinkByType(map, net_data.link, "community_link_data", "community_link");
     drawNodeByType(map, net_data.node, "community_node_data", "community_node", true, "default", call_back);
   }
@@ -440,6 +442,21 @@ function drawMultiRoute(map, route_data, show_index = 0) {
     drawLinkByType(map, data_copy[i].link, "multi_route_link_data" + i, "multi_route_link" + i, draw_type)
     drawNodeByType(map, data_copy[i].node, "multi_route_node_data" + i, "multi_route_node" + i, false, draw_type)
   }
+
+  // 添加标记站点
+  if (map.getSource("mark_pos") != undefined) {
+    map.addLayer({
+      'id': "mark",
+      'type': 'symbol',
+      'source': "mark_pos",
+      'layout': {
+        'icon-image': 'mark',
+        'icon-size': 0.3,
+        'icon-offset': [0, -100],
+      }
+    });
+  }
+
 
 }
 
@@ -688,6 +705,10 @@ function removeLayerByType(map, layer_type) {
         map.removeSource("multi_route_node_data" + i);
       }
     }
+    // 尝试移除添加单车站点
+    if (map.getLayer("mark") != undefined) {
+      map.removeLayer("mark");
+    }
   }
 }
 
@@ -789,52 +810,111 @@ function carbonHeat(map, data) {
  * 添加点击事件标记站点
  */
 function addMarkerByClick(map) {
-  map.on("click", drawMarker)
+  map.on("click", "community_node", markerEvent)
 }
 
-function drawMarker(e) {
+function markerEvent(e) {
   let map = this;
+  let choose_node_id = e.features[0].properties.id;
+  console.log(e.features[0].properties);
+  let coord = [e.lngLat.lng, e.lngLat.lat]
+  drawMarker(map, choose_node_id, coord)
+}
+/**
+ * 移除点击标记事件和所有标记
+ */
+function removeMarkerClick(map) {
+  map.off("click", "community_node", markerEvent)
+  if (map.getLayer("mark") != undefined) {
+    map.removeLayer("mark");
+    map.removeSource("mark_pos");
+  }
+}
+
+
+
+/**
+ * 绘制多个添加单车站点图标，同时确认是否重复站点，删除重复站点
+ *
+ */
+function drawMarker(map, node_id, node_coord) {
   const source_id = "mark_pos",
     layer_id = "mark";
-  let coord = [e.lngLat.lng, e.lngLat.lat],
-    data = {
+
+  // 首次点击
+  if (map.add_station == undefined) {
+    map.add_station = [node_id]
+    let data = {
       'type': 'FeatureCollection',
       'features': [{
         'type': 'Feature',
+        "properties": {
+          "id": node_id,
+        },
         'geometry': {
           'type': 'Point',
-          'coordinates': coord
+          'coordinates': node_coord
         }
       }]
     }
+    if (map.getLayer(layer_id) == undefined) {
+      map.addSource(source_id, {
+        'type': 'geojson',
+        'data': data
+      });
 
-  if (map.getLayer(layer_id) == undefined) {
-    map.addSource(source_id, {
-      'type': 'geojson',
-      'data': data
-    });
-
-    map.addLayer({
-      'id': layer_id,
-      'type': 'symbol',
-      'source': source_id,
-      'layout': {
-        'icon-image': 'mark',
-        'icon-size': 0.3,
-        'icon-offset': [0, -120],
-      }
-    });
+      map.addLayer({
+        'id': layer_id,
+        'type': 'symbol',
+        'source': source_id,
+        'layout': {
+          'icon-image': 'mark',
+          'icon-size': 0.3,
+          'icon-offset': [0, -100],
+        }
+      });
+    }
   } else {
-    map.getSource(source_id).setData(data);
+    // 检查输入点是否与已有重复，重复删除该点，否则新增
+    let index = -1;
+    for (let i = 0; i < map.add_station.length; i++)
+      if (map.add_station[i] == node_id) {
+        index = i;
+        break;
+      }
+    let old_data = map.getSource(source_id)["_data"];
+    let new_data = null;
+    //重复删除
+    if (index != -1) {
+      map.add_station.splice(index, 1)
+      new_data = {
+        'type': 'FeatureCollection',
+        'features': []
+      };
+      for (let i = 0; i < old_data["features"].length; i++)
+        if (i != index)
+          new_data["features"].push(old_data["features"][i])
+    }
+    // 不重复新增
+    else {
+      map.add_station.push(node_id)
+      let tmp = {
+        'type': 'Feature',
+        "properties": {
+          "id": node_id,
+        },
+        'geometry': {
+          'type': 'Point',
+          'coordinates': node_coord
+        }
+      }
+      old_data["features"].push(tmp)
+      new_data = JSON.parse(JSON.stringify(old_data));
+    }
+    // 无论重复与否都要更新数据
+    map.getSource(source_id).setData(new_data);
   }
 }
-/**
- * 移除点击标记事件
- */
-function removeMarkerClick(map) {
-  map.off("click", drawMarker)
-}
-
 
 
 function drawTestLink(map) {
