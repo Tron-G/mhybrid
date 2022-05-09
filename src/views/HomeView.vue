@@ -115,6 +115,8 @@ export default {
 			carbon_data: null,
 			// 是否添加了标记点击监听事件
 			add_status: false,
+			// 新添加的站点坐标
+			new_station: null,
 		};
 	},
 	created() {
@@ -169,6 +171,7 @@ export default {
 		},
 
 		drawRoute() {
+			// console.log("aaaasd", this.map.add_station);
 			// mapdrawer.drawRoute(this.map, this.$store.state.route_data);
 			// mapdrawer.drawTestLink(this.map);
 			// this.map.remove();
@@ -223,7 +226,7 @@ export default {
 			if (show_type == "overview") {
 				this.is_overview = true;
 				this.show_status = "hidden";
-				this.closeAllWindow();
+				this.closePanelByName(["All"]);
 				this.resetMap();
 			} else {
 				// 跳转到社区详细视图,同时更新小地图上选中节点的颜色
@@ -267,15 +270,6 @@ export default {
 				});
 			}
 			this.searchWindow();
-		},
-
-		/**
-		 * 切换到概览视图后隐藏无关面板
-		 */
-		closeAllWindow() {
-			this.$refs.cp_boxplot.hide();
-			this.$refs.cp_trafficpie.hide();
-			if (this.judge_route_data) this.$refs.cp_routepanel.hide();
 		},
 
 		/**
@@ -385,7 +379,7 @@ export default {
 		 *搜索窗口
 		 */
 		searchWindow() {
-			if (this.is_overview) this.$refs.cp_search.hide();
+			if (this.is_overview) this.closePanelByName(["cp_search"]);
 			else this.$refs.cp_search.show();
 		},
 
@@ -397,25 +391,62 @@ export default {
 			const origin_site = od_info["origin_site"],
 				destination_site = od_info["destination_site"];
 
-			// 重新请求后隐藏k线图面板
-			this.$refs.cp_boxplot.hide();
-			if (this.judge_route_data) this.$refs.cp_routepanel.hide();
+			if (this.map.add_station != undefined) {
+				this.new_station = this.map.add_station;
+			}
+			// 向后台传递手动添加的站点坐标
+			let add_station = null;
+			if (this.new_station != null) add_station = this.new_station;
+
+			// 重新请求后隐藏k线图面板和路线属性面板
+			this.closePanelByName(["cp_boxplot", "cp_routepanel"]);
 
 			let that = this;
 			requestAnimation({
 				url: "/calc_multi_route",
 				method: "post",
-				data: { origin_site, destination_site },
+				data: { origin_site, destination_site, add_station },
 			})
 				.then((res) => {
 					that.cachedData("multi_route", res);
 					return res;
 				})
 				.then((res) => {
+					console.log(res);
 					mapdrawer.drawMultiRoute(that.map, res.route);
 					that.$refs.cp_boxplot.show(res.all_history_Y);
 					that.$refs.cp_routepanel.show();
 				});
+		},
+
+		/**
+		 * 根据输入的名称数组隐藏相关面板
+		 * @param {Array} panel_name 需要关闭的面板名称，All表示关闭所有
+		 */
+		closePanelByName(panel_name) {
+			for (let i = 0; i < panel_name.length; i++) {
+				switch (panel_name[i]) {
+					case "All":
+						this.$refs.cp_boxplot.hide();
+						this.$refs.cp_trafficpie.hide();
+						if (this.judge_route_data) this.$refs.cp_routepanel.hide();
+						break;
+					case "cp_boxplot":
+						this.$refs.cp_boxplot.hide();
+						break;
+					case "cp_trafficpie":
+						this.$refs.cp_trafficpie.hide();
+						break;
+					case "cp_routepanel":
+						if (this.judge_route_data) this.$refs.cp_routepanel.hide();
+						break;
+					case "cp_search":
+						this.$refs.cp_search.hide();
+						break;
+					default:
+						break;
+				}
+			}
 		},
 
 		/**
@@ -428,6 +459,7 @@ export default {
 			} else {
 				mapdrawer.removeMarkerClick(this.map);
 				this.add_status = false;
+				this.new_station = null;
 			}
 		},
 
@@ -444,12 +476,12 @@ export default {
 		 */
 		showPie(street_name) {
 			let flow_data = this.detail_net.traffic_flow;
-			this.$refs.cp_trafficpie.hide();
-			setTimeout(() => {
-				this.$refs.cp_trafficpie.show(street_name, flow_data[street_name]);
-			}, 500);
+			this.$refs.cp_trafficpie.show(street_name, flow_data[street_name]);
+			// setTimeout(() => {
+			// 	this.$refs.cp_trafficpie.show(street_name, flow_data[street_name]);
+			// }, 500);
 		},
-		//////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////
 	},
 };
 </script>
