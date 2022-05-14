@@ -54,15 +54,17 @@ export default {
 };
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+$div_width: 370px;
 #pie_view {
 	position: absolute;
-	width: 350px;
-	height: 350px;
+	width: $div_width;
+	height: 370px;
 	bottom: 450px;
-	right: -350px;
-	background-color: white;
+	right: -$div_width;
+	background-color: #fcfcfc;
 	box-shadow: 0 0 10px #888888;
+	border-radius: 5px;
 	z-index: 9;
 }
 
@@ -79,7 +81,7 @@ export default {
 }
 @keyframes enter {
 	0% {
-		right: -350px;
+		right: -$div_width;
 	}
 
 	100% {
@@ -93,7 +95,7 @@ export default {
 	}
 
 	100% {
-		right: -350px;
+		right: -$div_width;
 	}
 }
 </style>

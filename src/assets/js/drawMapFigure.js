@@ -56,6 +56,8 @@ function initMapAndMinMap(map) {
   let m_map = new mapboxgl.Minimap({
     center: [118.127193, 24.491097],
     zoom: 10.6,
+    width: "370px",
+    height: "350px",
     style: "mapbox://styles/xiaobie/cl06pkagg005i14p82d999k9w",
     zoomLevels: [],
   })

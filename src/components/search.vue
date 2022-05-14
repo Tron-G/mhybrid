@@ -60,8 +60,9 @@ export default {
 	left: 15%;
 	width: 280px;
 	height: 90px;
-	background-color: white;
+	background-color: #f2f2f2;
 	box-shadow: 0 0 10px #888888;
+	border-radius: 5px;
 	z-index: 9;
 }
 

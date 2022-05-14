@@ -42,11 +42,12 @@ export default {
 #boxplot {
 	position: absolute;
 	bottom: -350px;
-	left: 50px;
+	left: 20px;
 	width: 400px;
 	height: 350px;
-	background-color: white;
+	background-color: #fcfcfc;
 	box-shadow: 0 0 10px #888888;
+	border-radius: 5px;
 	z-index: 9;
 }
 

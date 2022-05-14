@@ -261,13 +261,21 @@ function drawPie(container, title, data, clear_func) {
       // min: 0,
     },
     polar: {
-      center: ["50%", "55%"],
-      radius: "80%"
+      center: ["50%", "52%"],
+      radius: "70%"
     },
     series: series_data,
     legend: {
       show: true,
       data: title
+    },
+    title: {
+      text: "24-hour taxi traffic statistics for streets",
+      left: "center",
+      bottom: "1px",
+      textStyle: {
+        fontSize: 16
+      },
     },
 
     toolbox: {

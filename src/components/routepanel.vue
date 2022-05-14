@@ -202,18 +202,19 @@ $div_height: 250px;
 
 #route_panel {
 	position: absolute;
-	left: 700px;
+	left: 25%;
 	bottom: -$div_height;
 	width: 1250px;
 	height: $div_height;
-	background-color: white;
+	background-color: #fcfcfc;
 	box-shadow: 0 0 10px #888888;
+	border-radius: 5px;
 	z-index: 9;
 }
 #sort_tip {
 	position: absolute;
 	top: 10px;
-	left: 10px;
+	left: 15px;
 	width: 100px;
 	height: 10%;
 	// background-color: #e8e8e8;
