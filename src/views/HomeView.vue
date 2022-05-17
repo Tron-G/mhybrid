@@ -70,6 +70,7 @@
 			:route_attr="get_route_attr"
 			v-if="judge_route_data"
 		></routepanel>
+		<routeinfo ref="cp_routeinfo" v-if="judge_route_data"></routeinfo>
 	</div>
 </template>
 
@@ -83,6 +84,8 @@ import boxplot from "@/components/boxplot";
 import routepanel from "@/components/routepanel.vue";
 import trafficpie from "@/components/trafficpie";
 
+import routeinfo from "@/components/routeinfo";
+
 export default {
 	name: "HomeView",
 	components: {
@@ -90,6 +93,7 @@ export default {
 		boxplot,
 		routepanel,
 		trafficpie,
+		routeinfo,
 	},
 	data() {
 		return {
@@ -117,6 +121,8 @@ export default {
 			add_status: false,
 			// 新添加的站点坐标
 			new_station: null,
+			// 选择的路线id
+			choose_index: -1,
 		};
 	},
 	created() {
@@ -412,10 +418,12 @@ export default {
 					return res;
 				})
 				.then((res) => {
-					console.log(res);
+					// console.log(res);
+					that.choose_index = 0;
 					mapdrawer.drawMultiRoute(that.map, res.route);
 					that.$refs.cp_boxplot.show(res.all_history_Y);
 					that.$refs.cp_routepanel.show();
+					that.$refs.cp_routeinfo.show(res.route_attr[that.choose_index]);
 				});
 		},
 
@@ -430,6 +438,7 @@ export default {
 						this.$refs.cp_boxplot.hide();
 						this.$refs.cp_trafficpie.hide();
 						if (this.judge_route_data) this.$refs.cp_routepanel.hide();
+						this.$refs.cp_routeinfo.hide();
 						break;
 					case "cp_boxplot":
 						this.$refs.cp_boxplot.hide();
@@ -442,6 +451,9 @@ export default {
 						break;
 					case "cp_search":
 						this.$refs.cp_search.hide();
+						break;
+					case "cp_routeinfo":
+						this.$refs.cp_routeinfo.hide();
 						break;
 					default:
 						break;
@@ -468,7 +480,14 @@ export default {
 		 * @param {number} index 子组件传出来的当前选择框id
 		 */
 		switchRoute(index) {
+			this.choose_index = index;
 			mapdrawer.drawMultiRoute(this.map, this.route_data.route, index);
+			this.closePanelByName(["cp_routeinfo"]);
+			setTimeout(() => {
+				this.$refs.cp_routeinfo.show(
+					this.route_data["route_attr"][this.choose_index]
+				);
+			}, 1000);
 		},
 		/**
 		 * 展示被点击的街道流量信息

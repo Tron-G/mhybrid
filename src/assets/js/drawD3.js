@@ -87,6 +87,7 @@ function removeAllSvg() {
  *@param {Object} data [time, cost, transfer, carbon]
  *@param {string} now_sort 当前点击的排序条件
  *@param {string} last_sort 上一次的排序条件
+ *@returns {Number} 排序后的首位路线id
  */
 function sortItem(data, now_sort, last_sort) {
   // console.log(data);
@@ -151,9 +152,135 @@ function resetItemPos() {
 
 
 
+/**
+ * 绘制路线详细信息
+ *@param {string} container div id
+ *@param {Object} data 路线数据
+ */
+function drawRouteInfo(data, container) {
+  // console.log(data, container);
+  const draw_map = document.getElementById(container)
+  const map_width = draw_map.offsetWidth,
+    map_height = draw_map.offsetHeight;
+
+  let bike_src = require('../img/bike-dark.svg'),
+    car_src = require('../img/car.svg');
+
+  let svg = d3.select("#" + container)
+    .append("svg")
+    .attr("height", map_height)
+    .attr("width", map_width)
+    .attr("id", "info_svg")
+
+  const rect_height = map_height / data["route_street"].length,
+    circle_left = 40,
+    text_left = 80
+
+  for (let i = 0; i < data["route_street"].length; i++) {
+    let node_color = "#D5EAFC",
+      line_color = "#185ADB"
+    if (i % 2 == 0) node_color = "#F1F1F1"
+    if (i < data["route_street"].length - 1 && data["route_mode"][i] == 0) line_color = "#F7FD04"
+
+    // 换乘路段提醒
+    let tips = "";
+    if (i == 0) {
+      tips = "get on a "
+      if (data["route_mode"][i] == 0)
+        tips += "bike"
+      else
+        tips += "taxi"
+    } else if (i < data["route_street"].length - 1 && data["route_mode"][i] != data["route_mode"][i - 1]) {
+      tips = "transfer to a "
+      if (data["route_mode"][i] == 0)
+        tips += "bike"
+      else
+        tips += "taxi"
+    }
+
+    // 路段交通工具图标
+    let mode_img = car_src
+    if (i < data["route_street"].length - 1 && data["route_mode"][i] == 0)
+      mode_img = bike_src
+
+    //调试展示
+    // svg.append("rect")
+    //   .attr("width", map_width)
+    //   .attr("height", rect_height)
+    //   .attr("x", 0)
+    //   .attr("y", i * rect_height)
+    //   .attr("fill", node_color)
+    //   .style("opacity", "0.3")
+
+    svg.append("text")
+      .attr("x", text_left)
+      .attr("y", i * rect_height + rect_height / 2 + 6)
+      .attr("fill", "#000000")
+      .style("font-size", 16)
+      .text(data["route_street"][i])
+
+    if (tips != "") {
+      svg.append("text")
+        .attr("x", text_left + 150)
+        .attr("y", i * rect_height + rect_height / 2 + 6)
+        // .attr("fill", "#E02C2C")
+        .style("font-size", 16)
+        .style("font-weight", "bold")
+        .text(tips)
+    }
+    // 绘制路线颜色线段，交通图标，路程和时间
+    if (i < data["route_street"].length - 1) {
+      let path_info = data["route_distance"][i] + "m" + " , " + data["route_time"][i] + "s"
+      svg.append("line")
+        .attr("x1", circle_left)
+        .attr("y1", i * rect_height + rect_height / 2)
+        .attr("x2", circle_left)
+        .attr("y2", (i + 1) * rect_height + rect_height / 2)
+        .attr("stroke", line_color)
+        .attr("stroke-width", "7px");
+      svg.append("svg:image")
+        .attr("xlink:href", mode_img)
+        .attr("x", text_left + 10)
+        .attr("y", i * rect_height + rect_height - 12)
+        .attr("height", 25)
+        .attr("width", 25)
+      svg.append("text")
+        .attr("x", text_left + 200)
+        .attr("y", i * rect_height + rect_height + 5)
+        .attr("fill", "#505050")
+        .style("font-size", 14)
+        .style("font-style", "italic")
+        .text(path_info)
+    }
+
+    svg.append("circle")
+      // .attr("stroke", "green")
+      .attr("fill", data["street_color"][i])
+      .attr("cx", circle_left)
+      .attr("cy", i * rect_height + rect_height / 2)
+      .attr("r", 10)
+  }
+}
+
+
+/**
+ * 移除svg
+ */
+function removeSvg() {
+  let svg_id = "info_svg"
+  let svg = document.getElementById(svg_id);
+  svg.parentNode.removeChild(svg);
+}
+
+
+
+
+
 export {
   drawBar,
   removeAllSvg,
   sortItem,
-  resetItemPos
+  resetItemPos,
+  drawRouteInfo,
+  removeSvg
 }

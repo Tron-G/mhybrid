@@ -11,6 +11,7 @@
 			</button>
 		</router-link> -->
 	</div>
+	<div id="sys_title"></div>
 	<loader :title="msg"></loader>
 	<div id="main_view">
 		<router-view />
@@ -49,7 +50,7 @@ export default {
 #nav {
 	/* padding: 30px; */
 	position: absolute;
-	top: 0;
+	top: 50px;
 	left: 0;
 	height: 100%;
 	width: 3%;
