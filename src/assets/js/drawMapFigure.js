@@ -31,7 +31,7 @@ function initMap(container, opt = {}) {
   // 注册地图组件
   let map = new mapboxgl.Map(map_option);
   const navigation_control = new mapboxgl.NavigationControl();
-  map.addControl(navigation_control, "top-left");
+  map.addControl(navigation_control, "top-right");
   const scale = new mapboxgl.ScaleControl({
     maxWidth: 100,
     unit: "metric",

@@ -13,6 +13,22 @@ body {
 	top: 0;
 	left: 0;
 	width: 100%;
-	height: 50px;
+	height: 2%;
 	background-color: rgb(180, 180, 180);
+	line-height: 25px;
+	color: white;
+	font-size: 16px;
+	/* word-spacing: 5px; */
+	font-weight: bold;
+	font-family: MS Reference Sans Serif;
+}
+
+#main_view {
+	position: absolute;
+	left: 0;
+	top: 2%;
+	width: 100%;
+	height: 98%;
+	background-color: #bfd5df;
+	z-index: 0;
 }

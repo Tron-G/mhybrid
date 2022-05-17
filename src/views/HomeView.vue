@@ -1,76 +1,91 @@
 <template>
-	<div id="map_view">
-		<div id="od_panel" class="panel">
-			<div
-				@click="drawCarbonHeat()"
-				id="all_carbon"
-				class="btn"
-				:class="{ active: show_status == 'carbon' }"
-			>
-				carbon
+	<div id="sys_window">
+		<div id="nav">
+			<div id="menu">
+				<img :src="menuImg" class="menu_img" />
 			</div>
 
-			<div
-				@click="switchDrawType('get_on')"
-				id="geton_bt"
-				class="btn"
-				:class="{ active: show_status == 'get_on' }"
-			>
-				geton
+			<div id="overview_panel" class="panel">
+				<div
+					@click="switchOverview('overview')"
+					id="overview_bt"
+					class="btn enlarge"
+					:class="{ active: is_overview == true }"
+				>
+					<img :src="overviewImg" class="bt_img" />
+					<div class="bt_name" id="overview_btn">overview</div>
+				</div>
+				<div
+					@click="switchOverview('detail')"
+					id="detail_bt"
+					class="btn enlarge"
+					:class="{ active: is_overview == false }"
+				>
+					<img :src="detailImg" class="bt_img" />
+					<div class="bt_name">detail</div>
+				</div>
 			</div>
-			<div
-				@click="switchDrawType('get_off')"
-				id="getoff_bt"
-				class="btn"
-				:class="{ active: show_status == 'get_off' }"
-			>
-				getoff
-			</div>
-			<div
-				@click="switchDrawType('hidden')"
-				id="hidden_bt"
-				class="btn"
-				:class="{ active: show_status == 'hidden' }"
-			>
-				hidden
+
+			<div id="od_panel" class="panel">
+				<div
+					@click="switchDrawType('get_on')"
+					id="geton_bt"
+					class="btn"
+					:class="{ active: show_status == 'get_on' }"
+				>
+					<img :src="getonImg" class="bt_img" />
+					<div class="bt_name">geton</div>
+				</div>
+				<div
+					@click="switchDrawType('get_off')"
+					id="getoff_bt"
+					class="btn"
+					:class="{ active: show_status == 'get_off' }"
+				>
+					<img :src="getoffImg" class="bt_img" />
+					<div class="bt_name">getoff</div>
+				</div>
+
+				<div
+					@click="drawCarbonHeat()"
+					id="all_carbon"
+					class="btn"
+					:class="{ active: show_status == 'carbon' }"
+				>
+					<img :src="coImg" class="bt_img" />
+					<div class="bt_name">carbon</div>
+				</div>
+				<div
+					@click="switchDrawType('hidden')"
+					id="hidden_bt"
+					class="btn"
+					:class="{ active: show_status == 'hidden' }"
+				>
+					<img :src="hideImg" class="bt_img" />
+					<div class="bt_name">hidden</div>
+				</div>
 			</div>
 		</div>
-		<div id="overview_panel" class="panel">
-			<div
-				@click="switchOverview('overview')"
-				id="overview_bt"
-				class="btn enlarge"
-				:class="{ active: is_overview == true }"
-			>
-				overview
-			</div>
-			<div
-				@click="switchOverview('detail')"
-				id="detail_bt"
-				class="btn enlarge"
-				:class="{ active: is_overview == false }"
-			>
-				detail
-			</div>
-		</div>
-		<!-- <div id="test_btn">
+		<div id="map_view">
+			<!-- <div id="test_btn">
 			<button @click="drawRoute">draw</button>
 			<button @click="redraw">redraw</button>
 		</div> -->
-		<search
-			ref="cp_search"
-			@search-click="computeMultiRoute"
-			@insert-click="addMarker"
-		></search>
-		<boxplot ref="cp_boxplot"></boxplot>
-		<trafficpie ref="cp_trafficpie"></trafficpie>
-		<routepanel
-			ref="cp_routepanel"
-			@choose-route="switchRoute"
-			:route_attr="get_route_attr"
-			v-if="judge_route_data"
-		></routepanel>
-		<routeinfo ref="cp_routeinfo" v-if="judge_route_data"></routeinfo>
+			<search
+				ref="cp_search"
+				@search-click="computeMultiRoute"
+				@insert-click="addMarker"
+			></search>
+			<boxplot ref="cp_boxplot"></boxplot>
+			<trafficpie ref="cp_trafficpie"></trafficpie>
+			<routepanel
+				ref="cp_routepanel"
+				@choose-route="switchRoute"
+				:route_attr="get_route_attr"
+				v-if="judge_route_data"
+			></routepanel>
+			<routeinfo ref="cp_routeinfo" v-if="judge_route_data"></routeinfo>
+		</div>
 	</div>
 </template>
 
@@ -97,6 +112,15 @@ export default {
 	},
 	data() {
 		return {
+			///////////////////////// imgs //////////////////////////
+			menuImg: require("@/assets/img/nav/menu.svg"),
+			overviewImg: require("@/assets/img/nav/overview.svg"),
+			detailImg: require("@/assets/img/nav/detail.svg"),
+			getonImg: require("@/assets/img/nav/geton.svg"),
+			getoffImg: require("@/assets/img/nav/getoff.svg"),
+			coImg: require("@/assets/img/nav/co2.svg"),
+			hideImg: require("@/assets/img/nav/hide.svg"),
+			///////////////////////// imgs //////////////////////////
 			map: null,
 			//追踪页面的上下车显示状态
 			show_status: "hidden",
@@ -202,7 +226,7 @@ export default {
 					mapdrawer.drawNetwork(
 						this.map,
 						res.network,
-						re.station,
+						res.station,
 						this.showPie
 					);
 				});
@@ -437,8 +461,10 @@ export default {
 					case "All":
 						this.$refs.cp_boxplot.hide();
 						this.$refs.cp_trafficpie.hide();
-						if (this.judge_route_data) this.$refs.cp_routepanel.hide();
-						this.$refs.cp_routeinfo.hide();
+						if (this.judge_route_data) {
+							this.$refs.cp_routepanel.hide();
+							this.$refs.cp_routeinfo.hide();
+						}
 						break;
 					case "cp_boxplot":
 						this.$refs.cp_boxplot.hide();
@@ -453,7 +479,7 @@ export default {
 						this.$refs.cp_search.hide();
 						break;
 					case "cp_routeinfo":
-						this.$refs.cp_routeinfo.hide();
+						if (this.judge_route_data) this.$refs.cp_routeinfo.hide();
 						break;
 					default:
 						break;

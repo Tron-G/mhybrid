@@ -1,28 +1,26 @@
 <template>
-	<div id="nav">
+	<div id="sys_title">Hybrid Traffic Route Recommendation System</div>
+	<!-- <div id="nav">
 		<router-link to="/" custom v-slot="{ navigate }">
 			<button @click="navigate" @keypress.enter="navigate" id="home_page">
 				Home
 			</button>
 		</router-link>
-		<!-- <router-link to="/odView" custom v-slot="{ navigate }">
-			<button @click="navigate" @keypress.enter="navigate" id="od_page">
-				OD
-			</button>
-		</router-link> -->
-	</div>
-	<div id="sys_title"></div>
+	</div> -->
+
 	<loader :title="msg"></loader>
 	<div id="main_view">
-		<router-view />
+		<HomeView></HomeView>
 	</div>
 </template>
 
 <script>
 import loader from "components/loader.vue";
+import HomeView from "@/views/HomeView";
 export default {
 	components: {
 		loader,
+		HomeView,
 	},
 	data() {
 		return {
@@ -45,29 +43,9 @@ export default {
 	height: 100%;
 	background-color: rgb(203, 207, 211);
 	overflow: hidden;
+	text-align: center;
 }
 
-#nav {
-	/* padding: 30px; */
-	position: absolute;
-	top: 50px;
-	left: 0;
-	height: 100%;
-	width: 3%;
-	background-color: white;
-	/* padding: 1px;*/
-	border: 1px solid rgb(105, 105, 105);
-	z-index: 9;
-}
-#main_view {
-	position: absolute;
-	left: 3%;
-	top: 0;
-	width: 97%;
-	height: 100%;
-	background-color: #bfd5df;
-	z-index: 0;
-}
 #home_page {
 	text-align: center;
 	border: none;
