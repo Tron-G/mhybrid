@@ -100,7 +100,7 @@ function drawPoint(map, data, draw_type) {
       type: "geojson",
       data: data,
     });
-    let point_color = "#BA135D"
+    let point_color = "#B2182B"
     if (draw_type == "get_off") {
       point_color = "#2940D3"
     }
@@ -140,7 +140,7 @@ function drawPoint(map, data, draw_type) {
           0.4, "rgb(209,229,240)",
           0.6, "rgb(253,219,199)",
           0.8, "rgb(239,138,98)",
-          1, "rgb(178,24,43)"
+          1, point_color
         ],
         // Adjust the heatmap radius by zoom level
         "heatmap-radius": [
@@ -721,7 +721,17 @@ function carbonHeat(map, data) {
   const source_id = "carbon_data",
     layer_id = "carbon_layer"
 
-  map.on("load", () => {
+  if (map.loaded()) {
+    console.log("carbon is loaded");
+    ondraw();
+  } else {
+    map.on("load", function() {
+      console.log("carbon not loaded");
+      ondraw();
+    })
+  }
+
+  function ondraw() {
     map.addSource(source_id, {
       type: "geojson",
       data: data,
@@ -730,7 +740,7 @@ function carbonHeat(map, data) {
       "id": layer_id,
       "type": "heatmap",
       "source": source_id,
-      "maxzoom": 16,
+      "maxzoom": 17,
       "paint": {
         // Increase the heatmap weight based on frequency and property magnitude
         "heatmap-weight": [
@@ -777,12 +787,13 @@ function carbonHeat(map, data) {
           ["linear"],
           ["zoom"],
           10.5, 1,
-          16, 0
+          17, 0
         ],
       }
     });
 
-  })
+  }
+
   // map.addLayer({
   //   id: draw_type,
   //   source: draw_type + "_point",

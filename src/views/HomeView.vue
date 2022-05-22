@@ -47,7 +47,7 @@
 				</div>
 
 				<div
-					@click="drawCarbonHeat()"
+					@click="switchDrawType('carbon')"
 					id="all_carbon"
 					class="btn"
 					:class="{ active: show_status == 'carbon' }"
@@ -166,7 +166,7 @@ export default {
 				mapdrawer.drawClusterNet(this.map, res);
 				mapdrawer.drawClusterNet(this.map.min_map, res, true);
 			});
-
+		// 预先缓存碳排放数据
 		this.requestData("carbon").then((res) => {
 			this.cachedData("carbon", res);
 		});
@@ -213,14 +213,14 @@ export default {
 
 		/**
 		 * 根据点击按钮切换绘图类型，上车，下车，不显示
-		 *@param {string} draw_type "get_on"|| "get_off"|| "hidden"
+		 *@param {string} draw_type "get_on"|| "get_off"|| "hidden" || carbon
 		 */
 		switchDrawType(draw_type) {
 			if (this.show_status == draw_type) return;
 			// 无论是概览还是详细，当前不是hidden状态就重置地图
 			if (this.show_status != "hidden") this.resetMap();
 			if (this.show_status != "hidden" && !this.is_overview) {
-				// 详细视图下切换上下车热点
+				// 详细视图下先绘制网络图
 				this.requestData("detail_net").then((res) => {
 					this.cachedData("detail_net", res);
 					mapdrawer.drawNetwork(
@@ -235,11 +235,16 @@ export default {
 				this.show_status = "hidden";
 			} else {
 				this.show_status = draw_type;
-				this.requestData(draw_type).then((res) => {
-					console.log(draw_type + " data", res);
-					mapdrawer.drawPoint(this.map, res, draw_type);
-					this.cachedData(draw_type, res);
-				});
+				if (draw_type == "carbon") {
+					// console.log("fuc nfc", this.carbon_data);
+					mapdrawer.carbonHeat(this.map, this.carbon_data);
+				} else {
+					this.requestData(draw_type).then((res) => {
+						console.log(draw_type + " data", res);
+						mapdrawer.drawPoint(this.map, res, draw_type);
+						this.cachedData(draw_type, res);
+					});
+				}
 			}
 		},
 		/**
@@ -258,6 +263,7 @@ export default {
 				this.show_status = "hidden";
 				this.closePanelByName(["All"]);
 				this.resetMap();
+				this.resetStatus();
 			} else {
 				// 跳转到社区详细视图,同时更新小地图上选中节点的颜色
 				this.is_overview = false;
@@ -265,8 +271,8 @@ export default {
 					mapdrawer.removeLayerByType(this.map, "cluster_net");
 					mapdrawer.updateMinMap(this.map, this.cluster_net);
 				} else {
-					mapdrawer.removeLayerByType(this.map, "carbon");
-					mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
+					mapdrawer.removeLayerByType(this.map, "cluster_net");
+					// mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
 				}
 
 				//此处应该动态计算中心坐标
@@ -327,10 +333,19 @@ export default {
 				mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
 			}
 		},
+		/**
+		 * 清除缓存数据和状态
+		 */
+		resetStatus() {
+			this.route_data = null;
+			this.add_status = false;
+			this.new_station = null;
+			this.choose_index = -1;
+		},
 
 		/**
 		 * 数据请求
-		 *@param {string} data_type "get_on"|| "get_off" || "cluster_net"||"detail_net"
+		 *@param {string} data_type "get_on"|| "get_off" || "cluster_net"||"detail_net" || carbon
 		 *@return {promise}
 		 */
 		requestData(data_type) {
