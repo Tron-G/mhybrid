@@ -216,6 +216,7 @@ export default {
 		 *@param {string} draw_type "get_on"|| "get_off"|| "hidden" || carbon
 		 */
 		switchDrawType(draw_type) {
+			// TODO: 展示路线界面切换视图不影响路线显示
 			if (this.show_status == draw_type) return;
 			// 无论是概览还是详细，当前不是hidden状态就重置地图
 			if (this.show_status != "hidden") this.resetMap();
@@ -521,7 +522,8 @@ export default {
 		 * @param {number} index 子组件传出来的当前选择框id
 		 */
 		switchRoute(index) {
-			this.choose_index = index;
+			if (index >= 10) this.choose_index = index - 10;
+			else this.choose_index = index;
 			mapdrawer.drawMultiRoute(this.map, this.route_data.route, index);
 			this.closePanelByName(["cp_routeinfo"]);
 			setTimeout(() => {
