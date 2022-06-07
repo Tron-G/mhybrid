@@ -269,7 +269,7 @@ function drawRouteInfo(data, container) {
 function removeSvg() {
   let svg_id = "info_svg"
   let svg = document.getElementById(svg_id);
-  console.log(svg);
+  // console.log(svg);
   if (svg != null) {
     svg.parentNode.removeChild(svg);
   }

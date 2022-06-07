@@ -120,7 +120,7 @@ export default {
 			getoffImg: require("@/assets/img/nav/getoff.svg"),
 			coImg: require("@/assets/img/nav/co2.svg"),
 			hideImg: require("@/assets/img/nav/hide.svg"),
-			///////////////////////// imgs //////////////////////////
+			///////////////////////// status //////////////////////////
 			map: null,
 			//追踪页面的上下车显示状态
 			show_status: "hidden",
@@ -147,6 +147,8 @@ export default {
 			new_station: null,
 			// 选择的路线id
 			choose_index: -1,
+			// 是否在绘制其他视图时叠加社区网络
+			is_reset_draw_net: false,
 		};
 	},
 	created() {
@@ -219,8 +221,10 @@ export default {
 			// TODO: 展示路线界面切换视图不影响路线显示
 			if (this.show_status == draw_type) return;
 			// 无论是概览还是详细，当前不是hidden状态就重置地图
-			if (this.show_status != "hidden") this.resetMap();
-			if (this.show_status != "hidden" && !this.is_overview) {
+			// if (this.show_status != "hidden") this.resetMap();
+			// if (this.show_status != "hidden" && !this.is_overview) {
+			if (!this.is_overview) {
+				this.resetMap();
 				// 详细视图下先绘制网络图
 				this.requestData("detail_net").then((res) => {
 					this.cachedData("detail_net", res);
@@ -234,7 +238,9 @@ export default {
 			}
 			if (draw_type == "hidden") {
 				this.show_status = "hidden";
+				this.resetMap(true);
 			} else {
+				this.resetMap(this.is_reset_draw_net);
 				this.show_status = draw_type;
 				if (draw_type == "carbon") {
 					// console.log("fuc nfc", this.carbon_data);
@@ -263,17 +269,19 @@ export default {
 				this.is_overview = true;
 				this.show_status = "hidden";
 				this.closePanelByName(["All"]);
-				this.resetMap();
+				this.resetMap(true);
 				this.resetStatus();
 			} else {
 				// 跳转到社区详细视图,同时更新小地图上选中节点的颜色
 				this.is_overview = false;
-				if (this.show_status != "carbon") {
+				if (this.is_reset_draw_net)
 					mapdrawer.removeLayerByType(this.map, "cluster_net");
+				mapdrawer.updateMinMap(this.map, this.cluster_net);
+				if (this.show_status != "carbon") {
+					// mapdrawer.removeLayerByType(this.map, "cluster_net");
 					mapdrawer.updateMinMap(this.map, this.cluster_net);
 				} else {
-					mapdrawer.removeLayerByType(this.map, "cluster_net");
-					// mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
+					// mapdrawer.removeLayerByType(this.map, "cluster_net");
 				}
 
 				//此处应该动态计算中心坐标
@@ -317,13 +325,14 @@ export default {
 		},
 		/**
 		 * 重置地图和小地图
+		 * *@param {boolean} draw_net 是否在重置地图时绘制网络，默认不画
 		 */
-		resetMap() {
+		resetMap(draw_net = false) {
 			this.map.remove();
 			if (this.is_overview) {
 				this.resetClusterData();
 				this.map = mapdrawer.initMap("map_view");
-				mapdrawer.drawClusterNet(this.map, this.cluster_net);
+				if (draw_net) mapdrawer.drawClusterNet(this.map, this.cluster_net);
 				mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
 			} else {
 				// 详细街道视图下重置地图

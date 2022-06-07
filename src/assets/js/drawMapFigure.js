@@ -71,7 +71,7 @@ function initMapAndMinMap(map) {
 }
 
 /**
- * 地图上绘制散点图
+ * 地图上绘制散点图，上下车热点
  *@param {object} map mapbox实例对象
  *@param {object} data 格式化的geo类型json数据
  *@param {string} draw_type 绘制的图层id
@@ -147,8 +147,8 @@ function drawPoint(map, data, draw_type) {
           "interpolate",
           ["linear"],
           ["zoom"],
-          10, 5,
-          15, 30
+          10, 3,
+          15, 20
         ],
         // Transition from heatmap to circle layer by zoom level
         "heatmap-opacity": [
