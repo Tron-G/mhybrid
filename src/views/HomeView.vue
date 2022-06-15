@@ -148,7 +148,7 @@ export default {
 			// 选择的路线id
 			choose_index: -1,
 			// 是否在绘制其他视图时叠加社区网络
-			is_reset_draw_net: false,
+			is_reset_draw_net: true,
 		};
 	},
 	created() {
@@ -220,9 +220,6 @@ export default {
 		switchDrawType(draw_type) {
 			// TODO: 展示路线界面切换视图不影响路线显示
 			if (this.show_status == draw_type) return;
-			// 无论是概览还是详细，当前不是hidden状态就重置地图
-			// if (this.show_status != "hidden") this.resetMap();
-			// if (this.show_status != "hidden" && !this.is_overview) {
 			if (!this.is_overview) {
 				this.resetMap();
 				// 详细视图下先绘制网络图
@@ -238,10 +235,11 @@ export default {
 			}
 			if (draw_type == "hidden") {
 				this.show_status = "hidden";
-				this.resetMap(true);
+				this.resetMap(false);
 			} else {
-				this.resetMap(this.is_reset_draw_net);
 				this.show_status = draw_type;
+				this.resetMap(this.is_reset_draw_net);
+
 				if (draw_type == "carbon") {
 					// console.log("fuc nfc", this.carbon_data);
 					mapdrawer.carbonHeat(this.map, this.carbon_data);
@@ -274,8 +272,8 @@ export default {
 			} else {
 				// 跳转到社区详细视图,同时更新小地图上选中节点的颜色
 				this.is_overview = false;
-				if (this.is_reset_draw_net)
-					mapdrawer.removeLayerByType(this.map, "cluster_net");
+
+				mapdrawer.removeLayerByType(this.map, "cluster_net");
 				mapdrawer.updateMinMap(this.map, this.cluster_net);
 				if (this.show_status != "carbon") {
 					// mapdrawer.removeLayerByType(this.map, "cluster_net");
@@ -332,7 +330,10 @@ export default {
 			if (this.is_overview) {
 				this.resetClusterData();
 				this.map = mapdrawer.initMap("map_view");
-				if (draw_net) mapdrawer.drawClusterNet(this.map, this.cluster_net);
+				let opacity = 1;
+				if (this.show_status != "hidden") opacity = 0.5;
+				if (draw_net)
+					mapdrawer.drawClusterNet(this.map, this.cluster_net, false, opacity);
 				mapdrawer.drawClusterNet(this.map.min_map, this.cluster_net, true);
 			} else {
 				// 详细街道视图下重置地图
@@ -454,7 +455,7 @@ export default {
 			if (this.new_station != null) add_station = this.new_station;
 
 			// 重新请求后隐藏k线图面板和路线属性面板
-			this.closePanelByName(["cp_boxplot", "cp_routepanel"]);
+			this.closePanelByName(["cp_boxplot", "cp_routepanel", "cp_routeinfo"]);
 
 			let that = this;
 			requestAnimation({

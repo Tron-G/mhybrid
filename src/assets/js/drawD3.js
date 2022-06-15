@@ -230,7 +230,7 @@ function drawRouteInfo(data, container) {
     }
     // 绘制路线颜色线段，交通图标，路程和时间
     if (i < data["route_street"].length - 1) {
-      let path_info = data["route_distance"][i] + "m" + " , " + data["route_time"][i] + "s"
+      let path_info = data["route_carbon_list"][i].toFixed(2) + "kg , " + data["route_distance"][i] + "m" + " , " + data["route_time"][i] + "s"
       svg.append("line")
         .attr("x1", circle_left)
         .attr("y1", i * rect_height + rect_height / 2)
@@ -245,7 +245,7 @@ function drawRouteInfo(data, container) {
         .attr("height", 25)
         .attr("width", 25)
       svg.append("text")
-        .attr("x", text_left + 200)
+        .attr("x", text_left + 160)
         .attr("y", i * rect_height + rect_height + 5)
         .attr("fill", "#505050")
         .style("font-size", 14)

@@ -155,8 +155,8 @@ function drawPoint(map, data, draw_type) {
           "interpolate",
           ["linear"],
           ["zoom"],
-          10.5, 0.8,
-          16, 0
+          12, 1,
+          15, 0
         ],
       }
     });
@@ -192,8 +192,9 @@ function drawPoint(map, data, draw_type) {
  *@param {object} map 地图实例对象
  *@param {object} net_data
  *@param {boolean} is_minmap 区分小地图, true表示小地图
+ *@param {number} circle_opacity 节点透明度
  */
-function drawClusterNet(map, net_data, is_minmap = false) {
+function drawClusterNet(map, net_data, is_minmap = false, circle_opacity = 1) {
   if (map.loaded()) {
     drawLink();
     drawNode();
@@ -230,6 +231,7 @@ function drawClusterNet(map, net_data, is_minmap = false) {
           18, 55
         ],
         "circle-color": ["get", "color"],
+        "circle-opacity": circle_opacity,
       },
     });
 
@@ -674,10 +676,12 @@ function drawRoute(map, route_data) {
 function removeLayerByType(map, layer_type) {
   // 移除社区网络
   if (layer_type == "cluster_net") {
-    map.removeLayer("cluster_node");
-    map.removeLayer("cluster_link");
-    map.removeSource("cluster_node_data");
-    map.removeSource("cluster_link_data");
+    if (map.getLayer("cluster_node") != undefined) {
+      map.removeLayer("cluster_node");
+      map.removeLayer("cluster_link");
+      map.removeSource("cluster_node_data");
+      map.removeSource("cluster_link_data");
+    }
   }
   if (layer_type == "community_link") {
     if (map.getLayer("community_link") != undefined) {

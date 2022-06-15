@@ -69,6 +69,7 @@ export default {
 	methods: {
 		show(data) {
 			this.info = data;
+			// console.log(data);
 			let info_panel = document.getElementById("route_info");
 			if (
 				info_panel.classList.contains("hide_window") ||
