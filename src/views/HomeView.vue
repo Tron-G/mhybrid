@@ -235,7 +235,7 @@ export default {
 			}
 			if (draw_type == "hidden") {
 				this.show_status = "hidden";
-				this.resetMap(false);
+				this.resetMap(true);
 			} else {
 				this.show_status = draw_type;
 				this.resetMap(this.is_reset_draw_net);

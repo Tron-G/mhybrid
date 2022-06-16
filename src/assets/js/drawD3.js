@@ -3,18 +3,19 @@ const d3 = require("d3");
 /**
  * 绘制柱状图
  *@param {string} container div id
- *@param {Object} data [time, cost, transfer, carbon]
- *@param {Object} max_data max[time, cost, transfer, carbon]
+ *@param {Object} data [time, cost, distance, carbon]
+ *@param {Object} max_data max[time, cost, distance, carbon]
+ *@param {Object} min_data min[time, cost, distance, carbon]
  */
-function drawBar(container, data, max_data) {
+function drawBar(container, data, max_data, min_data) {
 
   // console.log(container, data, max_data);
   const draw_map = document.getElementById(container)
   const map_width = draw_map.offsetWidth,
     map_height = draw_map.offsetHeight;
 
-  const bar_title = ["TI", "M", "TR", "CO"]
-  const full_name = ["time", "cost", "transfer", "CO2"]
+  const bar_title = ["TI", "M", "D", "CO"]
+  const full_name = ["time", "cost", "distance", "CO2"]
   const bck_rect_color = "#EBEBEB",
     rect_color = "#61B0DF";
 
@@ -33,11 +34,12 @@ function drawBar(container, data, max_data) {
 
   for (let i = 0; i < 4; i++) {
 
-    let yScale = d3.scale.linear() //创建一个线性比例尺
-      .domain([0, max_data[i]]) //设定定义域
-      .range([0, rect_height])
+    // let yScale = d3.scale.linear() //创建一个线性比例尺
+    //   .domain([0, max_data[i]]) //设定定义域
+    //   .range([0, rect_height])
 
-    const value_rect_height = yScale(data[i])
+    // const value_rect_height = yScale(data[i])
+    const value_rect_height = rect_scale(rect_height, max_data[i], min_data[i], data[i])
 
     //绘制背景矩形
     svg.append("rect")
@@ -77,6 +79,14 @@ function drawBar(container, data, max_data) {
       .attr("y", 20)
       .text(bar_title[i])
   }
+
+  // 计算当前属性矩形的高度，最大值为100%，最小值30%，根据与最小值的差值来划分剩下的60%,留10%的头部空隙
+  function rect_scale(max_height, max_attr, min_attr, value) {
+    let result;
+    result = ((value - min_attr) / (max_attr - min_attr)) * max_height * 0.6 + max_height * 0.3
+    return result;
+  }
+
 }
 
 function removeAllSvg() {
@@ -84,7 +94,7 @@ function removeAllSvg() {
 }
 /**
  * 按照条件对结果面板排序并绘制交换动画
- *@param {Object} data [time, cost, transfer, carbon]
+ *@param {Object} data [time, cost, distance, carbon]
  *@param {string} now_sort 当前点击的排序条件
  *@param {string} last_sort 上一次的排序条件
  *@returns {Number} 排序后的首位路线id
@@ -98,7 +108,7 @@ function sortItem(data, now_sort, last_sort) {
   const alias = {
     "time": "cost_time",
     "cost": "cost_money",
-    "transfer": "transfer_time",
+    "distance": "total_distance",
     "carbon": "route_carbon",
   }
 

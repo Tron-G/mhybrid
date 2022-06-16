@@ -23,9 +23,9 @@
 								<p class="sum" v-if="info != null">{{ getCost }}</p>
 							</td>
 							<td>
-								<img :src="transImg" alt="" class="imgs" />
-								<p class="items">transfer :</p>
-								<p class="sum" v-if="info != null">{{ getTransfer }}</p>
+								<img :src="co2Img" alt="" class="imgs" />
+								<p class="items">CO2 :</p>
+								<p class="sum" v-if="info != null">{{ getCO2 }}</p>
 							</td>
 						</tr>
 					</table>
@@ -47,7 +47,7 @@ export default {
 			timeImg: require("../assets/img/time.svg"),
 			disImg: require("../assets/img/distance.svg"),
 			costImg: require("../assets/img/cost.svg"),
-			transImg: require("../assets/img/trans.svg"),
+			co2Img: require("../assets/img/co2.svg"),
 			info: null,
 		};
 	},
@@ -61,6 +61,10 @@ export default {
 		},
 		getCost() {
 			return "￥ " + this.info["cost_money"];
+		},
+		getCO2() {
+			let co2 = this.info["route_carbon"].toFixed(2) + " kg";
+			return co2;
 		},
 		getTransfer() {
 			return this.info["transfer_time"];

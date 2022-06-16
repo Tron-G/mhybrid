@@ -21,12 +21,12 @@
 					cost
 				</div>
 				<div
-					id="transfer_bt"
+					id="distance_bt"
 					class="btns sort_bt"
-					@click="sortResult('transfer')"
-					:class="{ active: now_sort == 'transfer' }"
+					@click="sortResult('distance')"
+					:class="{ active: now_sort == 'distance' }"
 				>
-					transfer
+					distance
 				</div>
 				<div
 					id="corbon_bt"
@@ -45,7 +45,7 @@
 					:id="getItemId(index)"
 				>
 					<div class="route_attr_chart" :id="getViewId(index)"></div>
-					<div class="info">route index: {{ index }}</div>
+					<div class="info">route index: {{ index + 1 }}</div>
 					<div class="btn_area">
 						<div
 							class="route_bt btns"
@@ -139,7 +139,7 @@ export default {
 		drawBar() {
 			let data = this.dataTransfer();
 			for (let i = 0; i < data[0].length; i++)
-				d3drawer.drawBar(this.getViewId(i), data[0][i], data[1]);
+				d3drawer.drawBar(this.getViewId(i), data[0][i], data[1], data[2]);
 		},
 		// 监听选择的路线, 只展示多模式路线，只能返回0到4
 		chooseRoute(index) {
@@ -174,24 +174,30 @@ export default {
 			let res = [];
 			let time = [],
 				cost = [],
-				transfer = [],
+				distance = [],
 				carbon = [];
 
 			for (let i = 0; i < this.route_attr.length; i++) {
 				time.push(this.route_attr[i].cost_time);
 				cost.push(this.route_attr[i].cost_money);
-				transfer.push(this.route_attr[i].transfer_time);
+				distance.push(this.route_attr[i].total_distance);
 				carbon.push(this.route_attr[i].route_carbon);
 			}
 			let max_data = [
 				Math.max(...time),
 				Math.max(...cost),
-				Math.max(...transfer),
+				Math.max(...distance),
 				Math.max(...carbon),
 			];
+			let min_data = [
+				Math.min(...time),
+				Math.min(...cost),
+				Math.min(...distance),
+				Math.min(...carbon),
+			];
 			for (let i = 0; i < time.length; i++)
-				res.push([time[i], cost[i], transfer[i], carbon[i]]);
-			return [res, max_data];
+				res.push([time[i], cost[i], distance[i], carbon[i]]);
+			return [res, max_data, min_data];
 		},
 	},
 };
@@ -285,7 +291,7 @@ $div_height: 250px;
 	position: fixed;
 	opacity: 0;
 	z-index: 10;
-	width: 80px;
+	width: 120px;
 	height: 25px;
 	background-color: white;
 	border: 1px solid #e8e8e8;
