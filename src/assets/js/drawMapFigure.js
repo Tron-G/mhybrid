@@ -846,6 +846,9 @@ function removeMarkerClick(map) {
     map.removeLayer("mark");
     map.removeSource("mark_pos");
   }
+  //移除添加的属性
+  if (map.add_station != undefined)
+    Reflect.deleteProperty(map, "add_station")
 }
 
 
@@ -899,8 +902,18 @@ function drawMarker(map, node_id, node_coord) {
         index = i;
         break;
       }
-    let old_data = map.getSource(source_id)["_data"];
-    let new_data = null;
+    let old_data, new_data = null;
+    console.log("123123", map.getSource(source_id));
+    console.log(map);
+    if (map.getSource(source_id) != undefined) {
+      old_data = map.getSource(source_id)["_data"];
+    } else {
+      old_data = {
+        'type': 'FeatureCollection',
+        'features': []
+      }
+    }
+
     //重复删除
     if (index != -1) {
       map.add_station.splice(index, 1)
@@ -928,8 +941,10 @@ function drawMarker(map, node_id, node_coord) {
       old_data["features"].push(tmp)
       new_data = JSON.parse(JSON.stringify(old_data));
     }
+
     // 无论重复与否都要更新数据
     map.getSource(source_id).setData(new_data);
+    console.log("222222", map.getSource(source_id));
   }
 }
 

@@ -14,7 +14,7 @@ function drawBar(container, data, max_data, min_data) {
   const map_width = draw_map.offsetWidth,
     map_height = draw_map.offsetHeight;
 
-  const bar_title = ["TI", "M", "D", "CO"]
+  const bar_title = ["T", "M", "D", "CO"]
   const full_name = ["time", "cost", "distance", "CO2"]
   const bck_rect_color = "#EBEBEB",
     rect_color = "#61B0DF";
@@ -80,10 +80,13 @@ function drawBar(container, data, max_data, min_data) {
       .text(bar_title[i])
   }
 
-  // 计算当前属性矩形的高度，最大值为100%，最小值30%，根据与最小值的差值来划分剩下的60%,留10%的头部空隙
+  // 计算当前属性矩形的高度，最大值为100%，最小值30%，根据与最小值的差值来划分剩下的60%,留10%的头部空隙，全都一样则返回50%
   function rect_scale(max_height, max_attr, min_attr, value) {
     let result;
-    result = ((value - min_attr) / (max_attr - min_attr)) * max_height * 0.6 + max_height * 0.3
+    if (max_attr != min_attr)
+      result = ((value - min_attr) / (max_attr - min_attr)) * max_height * 0.6 + max_height * 0.3
+    else
+      result = max_height * 0.5
     return result;
   }
 
@@ -190,7 +193,7 @@ function drawRouteInfo(data, container) {
     let node_color = "#D5EAFC",
       line_color = "#185ADB"
     if (i % 2 == 0) node_color = "#F1F1F1"
-    if (i < data["route_street"].length - 1 && data["route_mode"][i] == 0) line_color = "#F7FD04"
+    if (i < data["route_street"].length - 1 && data["route_mode"][i] != 1) line_color = "#F7FD04"
 
     // 换乘路段提醒
     let tips = "";

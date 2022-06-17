@@ -468,7 +468,7 @@ export default {
 					return res;
 				})
 				.then((res) => {
-					// console.log(res);
+					console.log(res);
 					that.choose_index = 0;
 					mapdrawer.drawMultiRoute(that.map, res.route);
 					that.$refs.cp_boxplot.show(res.all_history_Y);
