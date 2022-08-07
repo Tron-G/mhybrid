@@ -10,7 +10,7 @@
 
 We propose a low-carbon mixed route recommendation method based on a multilayer complex traffic network and define a trip chain-level carbon emission estimation model. These methods are integrated into a visual analytics system to support the multilevel exploration of urban traffic patterns, mixed traffic route recommendations for inter-community commuting, and optimization of low-carbon recommended routes by adjusting bike stations. By extracting real traffic flow data from taxi and bikesharing trajectory data, the method performs carbon emission estimation of urban streets and constructs a multilayer complex traffic network capable of visualizing urban traffic patterns. Based on this network low-carbon mixed traffic routes containing taxis and bike-sharing are then generated using a genetic algorithm modified by the A* algorithm, and the carbon emission is visualized.
 
-[sys](https://github.com/Tron-G/mhybrid/blob/dev/sys.png)
+![sys](https://github.com/Tron-G/mhybrid/blob/dev/sys.png)
 
 ***
 
