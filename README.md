@@ -10,6 +10,7 @@
 
 We propose a low-carbon mixed route recommendation method based on a multilayer complex traffic network and define a trip chain-level carbon emission estimation model. These methods are integrated into a visual analytics system to support the multilevel exploration of urban traffic patterns, mixed traffic route recommendations for inter-community commuting, and optimization of low-carbon recommended routes by adjusting bike stations. By extracting real traffic flow data from taxi and bikesharing trajectory data, the method performs carbon emission estimation of urban streets and constructs a multilayer complex traffic network capable of visualizing urban traffic patterns. Based on this network low-carbon mixed traffic routes containing taxis and bike-sharing are then generated using a genetic algorithm modified by the A* algorithm, and the carbon emission is visualized.
 
+![sys](https://github.com/Tron-G/mhybrid/blob/dev/sys.png)
 ***
 
 ## Project Dependencies
@@ -36,6 +37,8 @@ $$ \varphi(p_{i}) = \max \limits_{j\in \left [ 1,n \right ]} m_{ c_{j}}e^{- ( \f
 
 * Improved genetic algorithm based on A* algorithm
 
+![algorithm](https://github.com/Tron-G/mhybrid/blob/dev/algorithm.jpg)
+
 * Carbon emission estimation model
 
 $$ E(trip)=K_{c}*(0.3T+0.028D+0.056\sum_{i=1}^{n-1}\delta_{i} *(v_{i+1}^{2}-v_{i}^{2})) $$
@@ -48,13 +51,17 @@ $$ E(trip)=K_{c}*(0.3T+0.028D+0.056\sum_{i=1}^{n-1}\delta_{i} *(v_{i+1}^{2}-v_{i
 
 1. Overview of urban traffic conditions and carbon emission
 
-
+![demo1](https://github.com/Tron-G/mhybrid/blob/dev/demo1.gif)
 
 2. Mixed traffic route recommendation and personalized selection
 
+![demo2](https://github.com/Tron-G/mhybrid/blob/dev/demo2.gif)
+
+![demo3](https://github.com/Tron-G/mhybrid/blob/dev/demo3.gif)
 
 3. Modify bicycle stops to update recommended routes
 
+![demo4](https://github.com/Tron-G/mhybrid/blob/dev/demo4.gif)
 
 ## More
 Please refer to my csdn blog for some technical details：
