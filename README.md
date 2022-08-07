@@ -49,13 +49,17 @@ $$ E(trip)=K_{c}*(0.3T+0.028D+0.056\sum_{i=1}^{n-1}\delta_{i} *(v_{i+1}^{2}-v_{i
 
 1. Overview of urban traffic conditions and carbon emission
 
-
+![demo1](https://github.com/Tron-G/mhybrid/blob/dev/demo1.gif)
 
 2. Mixed traffic route recommendation and personalized selection
 
+![demo2](https://github.com/Tron-G/mhybrid/blob/dev/demo2.gif)
+
+![demo3](https://github.com/Tron-G/mhybrid/blob/dev/demo3.gif)
 
 3. Modify bicycle stops to update recommended routes
 
+![demo4](https://github.com/Tron-G/mhybrid/blob/dev/demo4.gif)
 
 ## More
 Please refer to my csdn blog for some technical details：
