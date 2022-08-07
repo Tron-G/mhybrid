@@ -37,6 +37,8 @@ $$ \varphi(p_{i}) = \max \limits_{j\in \left [ 1,n \right ]} m_{ c_{j}}e^{- ( \f
 
 * Improved genetic algorithm based on A* algorithm
 
+![algorithm](https://github.com/Tron-G/mhybrid/blob/dev/algorithm.jpg)
+
 * Carbon emission estimation model
 
 $$ E(trip)=K_{c}*(0.3T+0.028D+0.056\sum_{i=1}^{n-1}\delta_{i} *(v_{i+1}^{2}-v_{i}^{2})) $$
