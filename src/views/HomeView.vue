@@ -68,9 +68,9 @@
 		</div>
 		<div id="map_view">
 			<!-- <div id="test_btn">
-			<button @click="drawRoute">draw</button>
-			<button @click="redraw">redraw</button>
-		</div> -->
+				<button @click="drawRoute">draw</button>
+				<button @click="redraw">redraw</button>
+			</div> -->
 			<search
 				ref="cp_search"
 				@search-click="computeMultiRoute"
@@ -210,6 +210,7 @@ export default {
 			// console.log(this.map.loaded());
 		},
 		redraw() {
+			console.log("hhh", this.test);
 			// this.map = mapdrawer.initMap("map_view");
 		},
 
