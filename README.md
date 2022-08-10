@@ -67,7 +67,7 @@ $$ E(trip)=K_{c}*(0.3T+0.028D+0.056\sum_{i=1}^{n-1}\delta_{i} *(v_{i+1}^{2}-v_{i
 
 ![demo4](https://github.com/Tron-G/mhybrid/blob/dev/demo4.gif)
 
-## More
+## Related technologies and more information
 Please refer to my csdn blog for some technical details：
 
 [Tron_future’s CSDN blog](https://blog.csdn.net/Tron_future/article/details/123806812?spm=1001.2014.3001.5501)
