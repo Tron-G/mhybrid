@@ -44,7 +44,11 @@ $$ \varphi(p_{i}) = \max \limits_{j\in \left [ 1,n \right ]} m_{ c_{j}}e^{- ( \f
 $$ E(trip)=K_{c}*(0.3T+0.028D+0.056\sum_{i=1}^{n-1}\delta_{i} *(v_{i+1}^{2}-v_{i}^{2})) $$
 
 ## System Paper
->Related paper is being submitted, stay tuned. ^_^
+
+1. [Hybrid Traffic Route Visual Recommendation Based on Multilayer Complex Networks](https://github.com/Tron-G/mhybrid/blob/main/Hybrid%20Traffic%20Route%20Visual%20Recommendation%20Based%20on%20Multilayer%20Complex%20Networks.pdf)
+Published in 2022 IEEE 15th Pacific Visualization Symposium.
+2. Low-carbon mixed traffic route recommendation for community residents based on multilayer complex traffic network
+>this paper is being submitted, stay tuned. ^_^
 
 
 ## System Showcase
