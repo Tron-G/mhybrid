@@ -1,5 +1,11 @@
+<!--
+ * @Author: tron
+ * @Date: 2022-02-27 20:27:21
+ * @LastEditTime: 2022-08-10 21:21:52
+ * @FilePath: \mhybrid\src\App.vue
+-->
 <template>
-	<div id="sys_title">Hybrid Traffic Route Recommendation System</div>
+	<main-title></main-title>
 	<!-- <div id="nav">
 		<router-link to="/" custom v-slot="{ navigate }">
 			<button @click="navigate" @keypress.enter="navigate" id="home_page">
@@ -7,25 +13,18 @@
 			</button>
 		</router-link>
 	</div> -->
-
-	<loader :title="msg"></loader>
 	<div id="main_view">
 		<HomeView></HomeView>
 	</div>
 </template>
 
 <script>
-import loader from "components/loader.vue";
+import MainTitle from "@/components/content/mainTitle/MainTitle";
 import HomeView from "@/views/HomeView";
 export default {
 	components: {
-		loader,
+		MainTitle,
 		HomeView,
-	},
-	data() {
-		return {
-			msg: "Calculating...",
-		};
 	},
 };
 </script>
@@ -46,7 +45,7 @@ export default {
 	text-align: center;
 }
 
-#home_page {
+/* #home_page {
 	text-align: center;
 	border: none;
 	color: white;
@@ -60,7 +59,7 @@ export default {
 	background-color: #29b6f6;
 	font-size: 18px;
 	font-weight: bold;
-}
+} */
 
 .mapboxgl-popup .mapboxgl-popup-content {
 	max-width: 400px;

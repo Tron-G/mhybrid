@@ -1,9 +1,15 @@
+<!--
+ * @Author: tron
+ * @Date: 2022-08-10 20:36:13
+ * @LastEditTime: 2022-08-10 20:50:48
+ * @FilePath: \mhybrid\src\components\common\loading\Loading.vue
+-->
 <template>
 	<div>
-		<div id="cover" v-if="$store.state.is_loading">
+		<div id="cover" v-show="isShow">
 			<div id="loading_window">
 				<div id="loader"></div>
-				<p id="load_txt">{{ title }}</p>
+				<p id="load_txt">{{ message }}</p>
 				<div id="close" @click="close()">x</div>
 			</div>
 		</div>
@@ -12,23 +18,22 @@
 
 <script>
 export default {
-	name: "loader",
-	components: {},
-	props: {
-		title: String,
-	},
+	name: "Loading",
 	data() {
-		return {};
+		return {
+			message: "",
+			isShow: false,
+		};
 	},
 	computed: {},
 	methods: {
-		show() {
-			// this.is_loading = true;
-			this.$store.commit("showLoading");
+		show(message) {
+			this.isShow = true;
+			this.message = message;
 		},
 		close() {
-			// this.is_loading = false;
-			this.$store.commit("hideLoading");
+			this.isShow = false;
+			this.message = "";
 		},
 	},
 };
