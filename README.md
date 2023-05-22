@@ -19,7 +19,8 @@ We propose a low-carbon mixed route recommendation method based on a multilayer 
 * "mapbox-gl": "^2.7.0"
 * "axios": "^0.26.1"
 * "vue-router": "^4.0.3"
-* "node.js": "16.13.1"
+* "node.js": "12.18.3"
+* "npm": "6.14.6"
 
 ## Algorithm Support
 
